@@ -1,0 +1,62 @@
+{
+  "Description" : [ "This experiment learns a shape representation for ellipsoids",
+                    "using toy data." ],
+  "Device": 3,
+  "DataSource": "/home/jyn/NAISR/examples/pediatric_airway/3dshape.csv",
+  "Split" : "examples/pediatric_airway/newsplit.yaml",
+  "Network" : "DeepNAIGSR",
+  "NumEpochs" : 3100,
+  "LoggingRoot": "/playpen-raid/jyn/NAISR/log",
+  "ExperimentName": "DeepNAIGSR_ATLAS3D_0222_256_inv",
+  "EpochsTilCkpt": 100,
+  "StepsTilSummary": 100,
+  "UseLBFGS": false,
+  "DoublePrecision": false,
+  "CheckpointPath": "",
+  "CodeLength": 256,
+  "AdditionalSnapshots" : [ 50, 100, 200, 300, 400, 500 ],
+  "LearningRateSchedule" : [
+    {
+      "Type" : "Step",
+      "Initial" : 0.00005,
+      "Interval" : 1000,
+      "Factor" : 0.5
+    },
+    {
+      "Type" : "Step",
+      "Initial" : 0.001,
+      "Interval" : 1000,
+      "Factor" : 0.5
+    }],
+  "SamplesPerScene" : 750,
+  "BatchSize": 64,
+  "DataLoaderThreads" : 4,
+  "ClampingDistance" : 1,
+
+  "Articulation" : true,
+  "NumAtcParts" : 1,
+  "TrainWithParts" : false,
+  "Class" : "Airway",
+  "Attributes": [ "weight", "age", "sex"],
+  "TemplateAttributes":  {"weight": 100, "age": 100, "sex": 1 },
+  "Backbone": "siren",
+  "PosEnc": false,
+  "InFeatures": 3,
+  "HiddenFeatures": 256,
+  "HidenLayers": 6,
+  "OutFeatures": 1,
+
+  "Loss": {
+         "whether_small_mean_deform": false,
+          "whether_small_ind_deform": false,
+          "whether_eikonal": true,
+         "whether_vec": false,
+         "whether_jacobian":false,
+         "whether_hyperelastic": false,
+         "whether_bendingenergy": false,
+        "whether_code_regularization": true,
+        "whether_disentangle": true,
+        "whether_vad":  false,
+         "whether_inv":  true}
+}
+
