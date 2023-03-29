@@ -9,6 +9,8 @@ Yining Jiao, Carlton Zdanski, Julia Kimbell, Andrew Prince, Cameron Worden, Samu
 
 Codes to be revised..
 
+## Installation
+
 ## Usage
 
 Instructions on the way...
