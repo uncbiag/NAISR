@@ -7,6 +7,8 @@ This is the official implenmentation for,
 **NAISR: A 3D Neural Additive Model for Interpretable Shape Representation.**   
 Yining Jiao, Carlton Zdanski, Julia Kimbell, Andrew Prince, Cameron Worden, Samuel Kirse, Christopher Rutter, Benjamin Shields, William Dunn, Jisan Mahmud, Marc Niethammer. https://arxiv.org/abs/2303.09234
 
+Codes to be revised..
+
 ## Cite this work
 ```
 @article{jiao2023naisr,
