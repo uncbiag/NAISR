@@ -9,6 +9,10 @@ Yining Jiao, Carlton Zdanski, Julia Kimbell, Andrew Prince, Cameron Worden, Samu
 
 Codes to be revised..
 
+## Usage
+
+Instructions on the way...
+
 ## Cite this work
 ```
 @article{jiao2023naisr,
@@ -18,5 +22,4 @@ Codes to be revised..
   year={2023}
 }
 
-## Model
-Instructions on the way...
+
