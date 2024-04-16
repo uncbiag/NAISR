@@ -52,15 +52,15 @@
           <div class="is-size-5 publication-authors">
             <span class="author-block">
               <a href="https://jiaoyining.github.io/">Yining Jiao</a>,</span>
-            <span class="author-block">Carlton Zdanski</span>
-            <span class="author-block">Julia Kimbell</span>
-            <span class="author-block">Andrew Prince</span>
-            <span class="author-block">Cameron Worden</span>
-            <span class="author-block">Samuel Kirse</span>
-            <span class="author-block">Christopher Rutter</span>
-            <span class="author-block">Benjamin Shields</span>
-            <span class="author-block">William Dunn</span>
-            <span class="author-block">Jisan Mahmud</span>
+            <span class="author-block">Carlton Zdanski, </span>
+            <span class="author-block">Julia Kimbell, </span>
+            <span class="author-block">Andrew Prince, </span>
+            <span class="author-block">Cameron Worden, </span>
+            <span class="author-block">Samuel Kirse, </span>
+            <span class="author-block">Christopher Rutter, </span>
+            <span class="author-block">Benjamin Shields, </span>
+            <span class="author-block">William Dunn, </span>
+            <span class="author-block">Jisan Mahmud, </span>
             <span class="author-block">
               <a href="https://biag.cs.unc.edu/">Marc Niethammer</a></span>
           </div>
@@ -148,22 +148,6 @@
           Our experiments demonstrate that \texttt{NAISR} achieves excellent shape reconstruction performance while retaining interpretability.
           \href{https://github.com/uncbiag/NAISR}{Our code} is publicly available.
         </p>
-        <p>
-          In this work, we delve deep into the
-          architectural differences between the two types of models.
-          We observe that dense representation and fusion of visual
-          prompts are the key design choices contributing to the high
-          segmentation quality of specialist models. In light of this,
-          we reintroduce this dense design into the generalist models, to facilitate the development of generalist models with
-          high segmentation quality. To densely represent diverse visual prompts, we propose to use a dense map to capture
-          five types: clicks, boxes, polygons, scribbles, and masks.
-        </p>
-        <p>
-          Thus, we propose SegNext, a next-generation interactive
-          segmentation approach offering low latency, high quality,
-          and diverse prompt support. Our method outperforms current state-of-the-art methods on HQSeg-44K and DAVIS,
-          both quantitatively and qualitatively.
-        </p>
        </div>
       </div>
     </div>
@@ -174,7 +158,7 @@
 <section class="section">
   <div class="container is-max-desktop">    
     <center><h2 class="title is-3">Method</h2></center>
-    <center><img src="./static/images/method.png"></center>
+    <center><img src="./static/images/NAISRoverviewwide.pdf"></center>
     SegNext overview. We use a three-channel dense map to represent five diverse visual prompts: clicks, boxes, polygons, scribbles, 
     and masks. The embeddings of image and visual prompts are fused by element-wise addition, followed by an enhanced fusion via one
     or two self-attention blocks. The language prompt is encoded as a vector by CLIP, followed by querying the image embedding via
