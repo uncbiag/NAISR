@@ -159,10 +159,12 @@
   <div class="container is-max-desktop">    
     <center><h2 class="title is-3">Method</h2></center>
     <center><img src="./static/images/NAISRoverview.png"></center>
-    SegNext overview. We use a three-channel dense map to represent five diverse visual prompts: clicks, boxes, polygons, scribbles, 
-    and masks. The embeddings of image and visual prompts are fused by element-wise addition, followed by an enhanced fusion via one
-    or two self-attention blocks. The language prompt is encoded as a vector by CLIP, followed by querying the image embedding via
-    cross-attention blocks for the mask embeddings. A lightweight decoder processes the mask embeddings for segmentation.  
+    \small \textbf{Neural Additive Implicit Shape Representation.}
+    During training we learn the template $\mathcal{T}$ and the multi-layer perceptrons (MLPs)  $\{g_i\}$ predicting the covariate-wise displacement fields $\{\mathbf{d}_i\}$.
+    The displacement fields are added to obtain the overall displacement field $\mathbf{d}$ defined in the target space;
+    $\mathbf{d}$ provides the displacement between the deformed template shape $\mathcal{T}$ and the target shape. Specifically the template shape is queried not at its original coordinates $\mathbf{p}$,
+    but at $\Tilde{\mathbf{p}}=\mathbf{p}+\mathbf{d}$ effectively spatially deforming the template.
+    At test time we evaluate the trained MLPs for shape reconstruction, evolution, disentanglement, and shape transfer.
   </div>
 </section>
 
