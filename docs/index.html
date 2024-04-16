@@ -137,18 +137,16 @@
         <h2 class="title is-3">Abstract</h2>
         <div class="content has-text-justified">
         <p>
-          The goal of interactive image segmentation is to delineate specific regions
-          within an image via visual or language prompts. Low-latency and high-quality
-          interactive segmentation with diverse prompts remain challenging for existing 
-          specialist and generalist models. Specialist models, with their limited 
-          prompts and task-specific designs, experience high latency because the image 
-          must be recomputed every time the prompt is updated, due to the joint 
-          encoding of image and visual prompts. Generalist models, exemplified by the 
-          Segment Anything Model (SAM), have recently excelled in prompt diversity and 
-          efficiency, lifting image segmentation to the foundation model era.
-          However, for high-quality segmentations, SAM still lags behind state-of-the-art
-           specialist models despite SAM being trained with ×100 more
-          segmentation masks. 
+        Deep implicit functions (DIFs) have emerged as a powerful paradigm for many computer vision tasks such as 3D shape reconstruction, generation, registration, completion, editing, and understanding.
+          However, given a set of 3D shapes with associated covariates there is at present no shape representation method which allows to precisely represent the shapes while capturing the individual dependencies on each covariate.
+          Such a method would be of high utility to researchers to discover knowledge hidden in a population of shapes.
+          For scientific shape discovery, we propose a 3D Neural Additive Model for Interpretable Shape Representation (\texttt{NAISR}) which describes individual shapes by deforming a shape atlas in accordance to the effect of disentangled covariates.
+          Our approach captures shape population trends and allows for patient-specific predictions through shape transfer.
+          \texttt{NAISR} is the first approach to combine the benefits of deep implicit shape representations with an atlas deforming according to specified covariates.
+          We evaluate \texttt{NAISR} with respect to shape reconstruction, shape disentanglement, shape evolution, and shape transfer on three datasets:
+          1) \textit{Starman}, a simulated 2D shape dataset; 2) the ADNI hippocampus 3D shape dataset; and 3) a pediatric airway 3D shape dataset.
+          Our experiments demonstrate that \texttt{NAISR} achieves excellent shape reconstruction performance while retaining interpretability.
+          \href{https://github.com/uncbiag/NAISR}{Our code} is publicly available.
         </p>
         <p>
           In this work, we delve deep into the
