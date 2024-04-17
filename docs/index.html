@@ -40,6 +40,10 @@
   <script src="./static/js/bulma-carousel.min.js"></script>
   <script src="./static/js/bulma-slider.min.js"></script>
   <script src="./static/js/index.js"></script>
+<script type="text/javascript" async="" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+</script>
 </head>
 <body>
 
@@ -158,14 +162,16 @@
   <div class="container is-max-desktop">    
     <center><h2 class="title is-3">Method</h2></center>
     <center><img src="./static/images/NAISRoverview.png" vspace="60"></center>
-    \small \textbf{Neural Additive Implicit Shape Representation.}
+    <strong>Neural Additive Implicit Shape Representation.</strong>
     During training we learn the template $\mathcal{T}$ and the multi-layer perceptrons (MLPs)  $\{g_i\}$ predicting the covariate-wise displacement fields $\{\mathbf{d}_i\}$.
     The displacement fields are added to obtain the overall displacement field $\mathbf{d}$ defined in the target space;
     $\mathbf{d}$ provides the displacement between the deformed template shape $\mathcal{T}$ and the target shape. Specifically the template shape is queried not at its original coordinates $\mathbf{p}$,
-    but at $\Tilde{\mathbf{p}}=\mathbf{p}+\mathbf{d}$ effectively spatially deforming the template.
+    but at $\tilde{\mathbf{p}}=\mathbf{p}+\mathbf{d}$ effectively spatially deforming the template.
     At test time we evaluate the trained MLPs for shape reconstruction, evolution, disentanglement, and shape transfer.
   </div>
 </section>
+
+
 
 
 <section class="section">
@@ -175,50 +181,89 @@
         <center><h2 class="title is-3">Animation</h2></center>
 
         <!-- Interpolating. -->
-        <h3 class="title is-4">Interpolating states</h3>
+        <center><h3 class="title is-4">Interpolating states</h3></center>
         <div class="content has-text-justified">
           <p>
-            We can also animate the scene by interpolating the deformation latent codes of two input
-            frames. Use the slider here to linearly interpolate between the left frame and the right
-            frame.
+            Disentangled Shape evolution for Pediatric.
           </p>
         </div>
         <div class="columns is-vcentered interpolation-panel">
-          <div class="column is-3 has-text-centered">
-            <img src="./static/images/interpolation_start.png"
-                 class="interpolation-image"
-                 alt="Interpolate start reference image."/>
-            <p>Start Shape</p>
-          </div>
-          <div class="column interpolation-video-column">
-            <div id="interpolation-image-wrapper">
+        <div class="column interpolation-video-column">
+            <div id="wrapper-airway-age">
               Loading...
             </div>
             <input class="slider is-fullwidth is-large is-info"
-                   id="interpolation-slider"
-                   step="1" min="0" max="100" value="0" type="range">
-          </div>
-          <div class="column is-3 has-text-centered">
-            <img src="./static/images/interpolation_end.png"
-                 class="interpolation-image"
-                 alt="Interpolation end reference image."/>
-            <p class="is-bold">End Shape4</p>
+                   id="airway-age-slider"
+                   step="1" min="0" max=20 value="0" type="range">
+        </div>
+
+
+          <div class="column interpolation-video-column">
+            <div id="wrapper-airway-weight">
+              Loading...
+            </div>
+            <input class="slider is-fullwidth is-large is-info"
+                   id="airway-weight-slider"
+                   step="1" min="0" max=20 value="0" type="range">
           </div>
         </div>
       </div>
     </div>
-        <br/>
 </section>
 
+
+
 <section class="section">
-  <div class="container is-max-desktop">    
-    <center><h2 class="title is-3">Experiments</h2></center><br>
-    <center><img src="./static/images/reconstr_quant.png"></center>
-    Click to segmentation evaluation on HQSeg-44K and DAVIS. With varying numbers of clicks, our method consistently outperforms 
+  <div class="container is-max-desktop">
+    <center><h2 class="title is-3">Application - Shape Extrapolation in Template Space</h2></center>
+    <center><img src="./static/images/starman_shapematrix_template.png"></center>
+    Click to segmentation evaluation on HQSeg-44K and DAVIS. With varying numbers of clicks, our method consistently outperforms
     existing competitive approaches. The metric is mean Intersection over Union (mIoU).
 
     <br><br><br>
 
+    <center><img src="./static/images/shapematrix_template_adni.png"></center>
+    Click to segmentation evaluation on HQSeg-44K and DAVIS. With varying numbers of clicks, our method consistently outperforms
+    existing competitive approaches. The metric is mean Intersection over Union (mIoU).
+
+    <br><br><br>
+
+
+    <center><img src="./static/images/shapematrix_template_airway.png"></center>
+    Click to segmentation evaluation on HQSeg-44K and DAVIS. With varying numbers of clicks, our method consistently outperforms
+    existing competitive approaches. The metric is mean Intersection over Union (mIoU).
+
+    <br><br><br>
+      </div>
+</section>
+
+<section class="section">
+    <div class="container is-max-desktop">
+    <center><h2 class="title is-3">Application - Shape Extrapolation for a Specific Patient</h2></center>
+    <center><img src="./static/images/starman_shapematrix_specific.png"></center>
+    Click to segmentation evaluation on HQSeg-44K and DAVIS. With varying numbers of clicks, our method consistently outperforms
+    existing competitive approaches. The metric is mean Intersection over Union (mIoU).
+
+    <br><br><br>
+
+    <center><img src="./static/images/shapematrix_SPECIFIC_adni.png"></center>
+    Click to segmentation evaluation on HQSeg-44K and DAVIS. With varying numbers of clicks, our method consistently outperforms
+    existing competitive approaches. The metric is mean Intersection over Union (mIoU).
+
+    <br><br><br>
+
+
+    <center><img src="./static/images/shapematrix_1364_airway.png"></center>
+    Click to segmentation evaluation on HQSeg-44K and DAVIS. With varying numbers of clicks, our method consistently outperforms
+    existing competitive approaches. The metric is mean Intersection over Union (mIoU).
+
+    <br><br><br>
+  </div>
+</section>
+
+<section class="section">
+    <div class="container is-max-desktop">
+          <center><h2 class="title is-3">Experiment Results</h2></center>
     <center><img src="./static/images/reconstr_vis.png"></center>
     Quantitative comparison with existing methods on HQSeg-44K and DAVIS. We compare two types of baselines: specialist and
     generalist models. Our model achieves comparable performance to the specialist baselines but with significantly lower latency; our model
