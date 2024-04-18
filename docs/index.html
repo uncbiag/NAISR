@@ -71,7 +71,7 @@
 
           <div class="is-size-5 publication-authors">
             <span class="author-block">University of North Carolina at Chapel Hill</span> <br>
-            <span class="author-block">ICLR 2024, <strong>Spotlight Top 5%</strong></span>
+              <span class="author-block"><strong>ICLR 2024</strong>, <strong><font color=red>Spotlight Top 5%</font></strong></span>
           </div>
 
           <div class="column has-text-centered">
@@ -182,44 +182,6 @@
 
         <!-- Interpolating. -->
         <center><h3 class="title is-4">Interpolating states</h3></center>
-        <div class="content has-text-justified">
-          <p>
-            Disentangled Shape evolution for Pediatric.
-          </p>
-        </div>
-        <div class="columns is-vcentered interpolation-panel">
-            <div class="column interpolation-video-column">
-                <div id="wrapper-airway-age">
-                  Loading...
-                </div>
-                <input class="slider is-fullwidth is-large is-info"
-                       id="airway-age-slider"
-                       step="1" min="0" max=20 value="0" type="range">
-                <center><p class="is-bold">Age</p></center>
-            </div>
-
-            <div class="column interpolation-video-column">
-                <div id="wrapper-airway-weight">
-                  Loading...
-                </div>
-                <input class="slider is-fullwidth is-large is-info"
-                       id="airway-weight-slider"
-                       step="1" min="0" max=20 value="0" type="range">
-                  <center><p class="is-bold">Weight</p></center>
-            </div>
-
-            <div class="column interpolation-video-column">
-                <div id="wrapper-airway-sex">
-                  Loading...
-                </div>
-                <input class="slider is-fullwidth is-large is-info"
-                       id="airway-sex-slider"
-                       step="1" min="0" max=20 value="0" type="range">
-                  <center><p class="is-bold">Sex</p></center>
-            </div>
-
-        </div>
-
 
         <div class="content has-text-justified">
           <p>
@@ -234,7 +196,7 @@
                 <input class="slider is-fullwidth is-large is-info"
                        id="starman-hand-slider"
                        step="1" min="0" max=20 value="0" type="range">
-                <center><p class="is-bold">Age</p></center>
+                <center><p class="is-bold">Hand Movement</p></center>
             </div>
 
             <div class="column interpolation-video-column">
@@ -244,14 +206,52 @@
                 <input class="slider is-fullwidth is-large is-info"
                        id="starman-leg-slider"
                        step="1" min="0" max=20 value="0" type="range">
-                  <center><p class="is-bold">Weight</p></center>
+                  <center><p class="is-bold">Leg Movement</p></center>
             </div>
-
         </div>
 
         <div class="content has-text-justified">
           <p>
-            Disentangled Shape evolution for Pediatric.
+            Disentangled Shape Evolution for Pediatric Airways.
+          </p>
+        </div>
+        <div class="columns is-vcentered interpolation-panel">
+            <div class="column interpolation-video-column">
+                <div id="wrapper-airway-age">
+                  Loading...
+                </div>
+                <input class="slider is-fullwidth is-large is-info"
+                       id="airway-age-slider"
+                       step="1" min="0" max=20 value="0" type="range">
+                <center><p class="is-bold">Age: from 0 - 240 months</p></center>
+            </div>
+
+            <div class="column interpolation-video-column">
+                <div id="wrapper-airway-weight">
+                  Loading...
+                </div>
+                <input class="slider is-fullwidth is-large is-info"
+                       id="airway-weight-slider"
+                       step="1" min="0" max=20 value="0" type="range">
+                  <center><p class="is-bold">Weight: from 0 - 160 kgs </p></center>
+            </div>
+
+            <div class="column interpolation-video-column">
+                <div id="wrapper-airway-sex">
+                  Loading...
+                </div>
+                <input class="slider is-fullwidth is-large is-info"
+                       id="airway-sex-slider"
+                       step="1" min="0" max=20 value="0" type="range">
+                  <center><p class="is-bold">Sex: from F to M</p></center>
+            </div>
+
+        </div>
+
+
+        <div class="content has-text-justified">
+          <p>
+            Disentangled Shape Evolution for ADNI Hippocampus.
           </p>
         </div>
         <div class="columns is-vcentered interpolation-panel">
@@ -260,9 +260,9 @@
                   Loading...
                 </div>
                 <input class="slider is-fullwidth is-large is-info"
-                       id="adni-age-slider"
+                       id="ADNI-age-slider"
                        step="1" min="0" max=20 value="0" type="range">
-                <center><p class="is-bold">Age</p></center>
+                <center><p class="is-bold">Age: from 50 - 100 yrs old</p></center>
             </div>
 
             <div class="column interpolation-video-column">
@@ -270,9 +270,9 @@
                   Loading...
                 </div>
                 <input class="slider is-fullwidth is-large is-info"
-                       id="adni-AD-slider"
+                       id="ADNI-AD-slider"
                        step="1" min="0" max=20 value="0" type="range">
-                  <center><p class="is-bold">AD</p></center>
+                  <center><p class="is-bold">AD: from health to AD</p></center>
             </div>
 
             <div class="column interpolation-video-column">
@@ -280,9 +280,9 @@
                   Loading...
                 </div>
                 <input class="slider is-fullwidth is-large is-info"
-                       id="adin-edu-slider"
+                       id="ADNI-edu-slider"
                        step="1" min="0" max=20 value="0" type="range">
-                  <center><p class="is-bold">Educational Length</p></center>
+                  <center><p class="is-bold">Edu.: from 0 - 30 years</p></center>
             </div>
 
             <div class="column interpolation-video-column">
@@ -290,7 +290,7 @@
                   Loading...
                 </div>
                 <input class="slider is-fullwidth is-large is-info"
-                       id="adin-sex-slider"
+                       id="ADNI-sex-slider"
                        step="1" min="0" max=20 value="0" type="range">
                   <center><p class="is-bold">Sex</p></center>
             </div>

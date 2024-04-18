@@ -142,7 +142,7 @@ function setADNIEdu(i) {
 }
 
 function setADNISex(i) {
-  var image = interp_adni_edu_images[i];
+  var image = interp_adni_sex_images[i];
   image.ondragstart = function() { return false; };
   image.oncontextmenu = function() { return false; };
   $('#wrapper-adni-sex').empty().append(image);
@@ -244,7 +244,7 @@ $(document).ready(function() {
       setADNIEdu(this.value);
     });
     setADNIEdu(0);
-    $('#ADNI-EDU-slider').prop('max', NUM_INTERP_FRAMES - 1);
+    $('#ADNI-edu-slider').prop('max', NUM_INTERP_FRAMES - 1);
 
     $('#ADNI-sex-slider').on('input', function(event) {
       setADNISex(this.value);
