@@ -114,7 +114,8 @@ body {
 <section class="hero teaser">
   <div class="container is-max-desktop">
     <div class="hero-body">
-              <center><h2 class="title is-3">Motivation of <tt>NAISR</tt></h2>    </center>
+              <center><h2 class="title is-3">Motivation of <tt>NAISR</tt></h2></center>
+        <hr>
       <center><img src="./static/images/motivation.svg" width="750"></center>
       <!-- <h2 class="subtitle has-text-centered"> -->
         <!-- We propose <span class="dnerf">SegNext</span> for next-generation promptable segmentation <br> with low latency, high quality, and diverse prompts.  -->
@@ -142,10 +143,8 @@ body {
 
 <section class="section">
   <div class="container is-max-desktop">
-    <div class="columns is-centered has-text-centered">
-      <div class="column is-four-fifths">
-        <h2 class="title is-3">Abstract</h2>
-        <div class="content has-text-justified">
+      <center><h2 class="title is-3">Abstract</h2></center>
+       <hr>
         <p>
         Deep implicit functions (DIFs) have emerged as a powerful paradigm for many computer vision tasks such as 3D shape reconstruction, generation, registration, completion, editing, and understanding.
           However, given a set of 3D shapes with associated covariates there is at present no shape representation method which allows to precisely represent the shapes while capturing the individual dependencies on each covariate.
@@ -157,17 +156,16 @@ body {
             1) <i>Starman</i>, a simulated 2D shape dataset; 2) the ADNI hippocampus 3D shape dataset; and 3) a pediatric airway 3D shape dataset.
           Our experiments demonstrate that <tt>NAISR</tt> achieves excellent shape reconstruction performance while retaining interpretability.
         </p>
-       </div>
-      </div>
     </div>
-  </div>
+
 </section>
 
 
 <section class="section">
   <div class="container is-max-desktop">    
     <center><h2 class="title is-3">Method</h2></center>
-    <center><img src="./static/images/NAISRoverview.png" vspace="60"></center>
+              <hr>
+    <center><img src="./static/images/NAISRoverview.png" vspace="20"></center>
     <strong>Neural Additive Implicit Shape Representation.</strong>
     During training we learn the template $\mathcal{T}$ and the multi-layer perceptrons (MLPs)  $\{g_i\}$ predicting the covariate-wise displacement fields $\{\mathbf{d}_i\}$.
     The displacement fields are added to obtain the overall displacement field $\mathbf{d}$ defined in the target space;
@@ -185,7 +183,7 @@ body {
     <div class="columns is-centered">
         <div class="container is-max-desktop">
         <center><h2 class="title is-3">Disentangled Shape Evolutions</h2></center>
-
+        <hr>
         <div class="content has-text-justified">
           <p>
               Disentangled Shape Evolution for <i>Starmans</i>. The blue shapes are the groundtruth shapes and the red shapes are the reconstructions.
@@ -212,7 +210,7 @@ body {
                   <center><p class="is-bold">Leg Movement</p></center>
             </div>
         </div>
-
+        <hr>
         <div class="content has-text-justified">
           <p>
             Disentangled Shape Evolution for Pediatric Airways.
@@ -251,7 +249,7 @@ body {
 
         </div>
 
-
+        <hr>
         <div class="content has-text-justified">
           <p>
             Disentangled Shape Evolution for ADNI Hippocampus.
@@ -307,49 +305,16 @@ body {
 
 <section class="section">
   <div class="container is-max-desktop">
-    <center><h2 class="title is-3">Application - Shape Extrapolation in Template Space</h2></center>
-    <center><img src="./static/images/starman_shapematrix_template.png"></center>
-    Click to segmentation evaluation on HQSeg-44K and DAVIS. With varying numbers of clicks, our method consistently outperforms
-    existing competitive approaches. The metric is mean Intersection over Union (mIoU).
-
-    <br><br><br>
-
+    <center><h2 class="title is-3">Shape Extrapolation in Template Space</h2></center>
+  <hr>
+    <center><h3 class="title is-4" >Template Shape Space for <i>Starman</i>.</h3></center>
+    <center><img src="./static/images/starman_shapematrix_template.png" ></center>
+              <hr>
+    <center><h3 class="title is-4">Template Shape Space for ADNI Hippocampus.</h3></center>
     <center><img src="./static/images/shapematrix_template_adni.png"></center>
-    Click to segmentation evaluation on HQSeg-44K and DAVIS. With varying numbers of clicks, our method consistently outperforms
-    existing competitive approaches. The metric is mean Intersection over Union (mIoU).
-
-    <br><br><br>
-
-
+              <hr>
+    <center><h3 class="title is-4">Template Shape Space for Pediatric Airways.</h3></center>
     <center><img src="./static/images/shapematrix_template_airway.png"></center>
-    Click to segmentation evaluation on HQSeg-44K and DAVIS. With varying numbers of clicks, our method consistently outperforms
-    existing competitive approaches. The metric is mean Intersection over Union (mIoU).
-
-    <br><br><br>
-      </div>
-</section>
-
-<section class="section">
-    <div class="container is-max-desktop">
-    <center><h2 class="title is-3">Application - Shape Extrapolation for a Specific Patient</h2></center>
-    <center><img src="./static/images/starman_shapematrix_specific.png"></center>
-    Click to segmentation evaluation on HQSeg-44K and DAVIS. With varying numbers of clicks, our method consistently outperforms
-    existing competitive approaches. The metric is mean Intersection over Union (mIoU).
-
-    <br><br><br>
-
-    <center><img src="./static/images/shapematrix_SPECIFIC_adni.png"></center>
-    Click to segmentation evaluation on HQSeg-44K and DAVIS. With varying numbers of clicks, our method consistently outperforms
-    existing competitive approaches. The metric is mean Intersection over Union (mIoU).
-
-    <br><br><br>
-
-
-    <center><img src="./static/images/shapematrix_1364_airway.png"></center>
-    Click to segmentation evaluation on HQSeg-44K and DAVIS. With varying numbers of clicks, our method consistently outperforms
-    existing competitive approaches. The metric is mean Intersection over Union (mIoU).
-
-    <br><br><br>
   </div>
 </section>
 
