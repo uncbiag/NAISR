@@ -44,6 +44,13 @@
 <script type="text/x-mathjax-config">
   MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
 </script>
+    <link rel="stylesheet" type="text/css"
+    href="https://cdn.rawgit.com/dreampulse/computer-modern-web-font/master/fonts.css">
+<style>
+body {
+  font-family: "Computer Modern Sans", sans-serif;
+}
+</style>
 </head>
 <body>
 
@@ -52,7 +59,7 @@
     <div class="container is-max-desktop">
       <div class="columns is-centered">
         <div class="column has-text-centered">
-          <h2 class="title is-2 publication-title">NAISR: A 3D Neural Additive Model for Interpretable Shape Representation</h2>
+          <h2 class="title is-2 publication-title"><tt>NAISR</tt>: A 3D Neural Additive Model for Interpretable Shape Representation</h2>
           <div class="is-size-5 publication-authors">
             <span class="author-block">
               <a href="https://jiaoyining.github.io/">Yining Jiao</a>,</span>
@@ -107,14 +114,11 @@
 <section class="hero teaser">
   <div class="container is-max-desktop">
     <div class="hero-body">
-              <center><h2 class="title is-3">Motivation of NAISR</h2>    </center>
+              <center><h2 class="title is-3">Motivation of <tt>NAISR</tt></h2>    </center>
       <center><img src="./static/images/motivation.svg" width="750"></center>
       <!-- <h2 class="subtitle has-text-centered"> -->
         <!-- We propose <span class="dnerf">SegNext</span> for next-generation promptable segmentation <br> with low latency, high quality, and diverse prompts.  -->
-        Conceptual comparison between our approach <span class="dnerf">SegNext</span> and prior state-of-the-art methods, SimpleClick and
-        SAM, for the interactive segmentation task. Our method combines the best of both worlds for interactive segmentation with low
-        latency, high quality, and diverse prompts.
-
+        For scientific and medical discovery, it is very important to capture the individual dependencies of shapes on covariates.
       <!-- </h2> -->
     </div>
   </div>
@@ -125,8 +129,8 @@
     <div class="hero-body">
       <center><img src="./static/images/methods_comp.png" width="750"></center>
       <!-- <h2 class="subtitle has-text-centered"> -->
-      Conceptual comparison between our approach <span class="dnerf">NAISR</span> and prior state-of-the-art for shape analysis tasks.
-      <span class="dnerf">NAISR</span> is the first implicit shape representation method to investigate an atlas-based representation of 3D shapes in a deformable, disentangleable, transferable and evolvable way.
+      Conceptual comparison between our approach <tt>NAISR</tt> and prior state-of-the-art for shape analysis tasks.
+      <tt>NAISR</tt> is the first implicit shape representation method to investigate an atlas-based representation of 3D shapes in a deformable, disentangleable, transferable and evolvable way.
 
       <!-- </h2> -->
     </div>
@@ -143,13 +147,12 @@
         Deep implicit functions (DIFs) have emerged as a powerful paradigm for many computer vision tasks such as 3D shape reconstruction, generation, registration, completion, editing, and understanding.
           However, given a set of 3D shapes with associated covariates there is at present no shape representation method which allows to precisely represent the shapes while capturing the individual dependencies on each covariate.
           Such a method would be of high utility to researchers to discover knowledge hidden in a population of shapes.
-          For scientific shape discovery, we propose a 3D Neural Additive Model for Interpretable Shape Representation (\texttt{NAISR}) which describes individual shapes by deforming a shape atlas in accordance to the effect of disentangled covariates.
+          For scientific shape discovery, we propose a 3D Neural Additive Model for Interpretable Shape Representation (<tt>NAISR</tt>) which describes individual shapes by deforming a shape atlas in accordance to the effect of disentangled covariates.
           Our approach captures shape population trends and allows for patient-specific predictions through shape transfer.
-          \texttt{NAISR} is the first approach to combine the benefits of deep implicit shape representations with an atlas deforming according to specified covariates.
-          We evaluate \texttt{NAISR} with respect to shape reconstruction, shape disentanglement, shape evolution, and shape transfer on three datasets:
-          1) \textit{Starman}, a simulated 2D shape dataset; 2) the ADNI hippocampus 3D shape dataset; and 3) a pediatric airway 3D shape dataset.
-          Our experiments demonstrate that \texttt{NAISR} achieves excellent shape reconstruction performance while retaining interpretability.
-          \href{https://github.com/uncbiag/NAISR}{Our code} is publicly available.
+          <tt>NAISR</tt> is the first approach to combine the benefits of deep implicit shape representations with an atlas deforming according to specified covariates.
+          We evaluate <tt>NAISR</tt> with respect to shape reconstruction, shape disentanglement, shape evolution, and shape transfer on three datasets:
+            1) <i>Starman</i>, a simulated 2D shape dataset; 2) the ADNI hippocampus 3D shape dataset; and 3) a pediatric airway 3D shape dataset.
+          Our experiments demonstrate that <tt>NAISR</tt> achieves excellent shape reconstruction performance while retaining interpretability.
         </p>
        </div>
       </div>
@@ -178,14 +181,11 @@
     <!-- Animation. -->
     <div class="columns is-centered">
         <div class="container is-max-desktop">
-        <center><h2 class="title is-3">Animation</h2></center>
-
-        <!-- Interpolating. -->
-        <center><h3 class="title is-4">Interpolating states</h3></center>
+        <center><h2 class="title is-3">Disentangled Shape Evolutions</h2></center>
 
         <div class="content has-text-justified">
           <p>
-            Disentangled Shape evolution for Starman.
+              Disentangled Shape Evolution for <i>Starmans</i>.
           </p>
         </div>
         <div class="columns is-vcentered interpolation-panel">
