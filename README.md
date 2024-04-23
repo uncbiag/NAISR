@@ -25,6 +25,10 @@ url={https://openreview.net/forum?id=wg8NPfeMF9}
 
 An update is coming soon
 
+>[!NOTE]
+>For the three datasets used in `NAISR` paper, we provided this [Colab demo](https://colab.research.google.com/drive/1OudGynEydIXpAgfA9lvi5d0L86kK-uwg) to investigate the shapes learned with `NAISR`. <br>
+We also provide the instructions on this page to apply `NAISR` to your customized shape analysis questions. 
+
 
 ## Installation
 The code is tested with ``python=3.9``, ``torch=2.1.0``, ``torchvision=0.15.2``.
@@ -39,25 +43,8 @@ conda activate naisr
 pip install -r requirements.txt
 ```
 
->[!NOTE]
->For the three datasets used in `NAISR` paper, we provided this [Colab demo](https://colab.research.google.com/drive/1OudGynEydIXpAgfA9lvi5d0L86kK-uwg) to investigate the shapes learned with `NAISR`. <br>
-We also provide the instructions on this page to apply `NAISR` to your customized shape analysis questions. 
 
-## Getting Started
-
-First 
-First, download three model weights: vitb_sax1 (408M), vitb_sax2 (435M), and vitb_sax2_ft (435M). These weights will be automatically saved to the ``weights`` folder.
-```
-python download.py
-```
-
-Run interactive GUI with the downloaded weights. The ``assets`` contains images for demo.
-```
-./run_demo.sh
-```
-
-
-
+## Data and Model Weights
 We train and test our method on three datasets: Starman, ADNI Hippocampus, and Pediatric Airways.
 
 | Dataset   |                      Description             |           Dataset Link              |   Model Link              |
@@ -74,6 +61,36 @@ We train and test our method on three datasets: Starman, ADNI Hippocampus, and P
 [ADNIModel]: https://github.com/uncbiag/NAISR/releases/download/naisr_weights_v0/naisr_weights_adni.pth
 [StarmanModel]: https://github.com/uncbiag/NAISR/releases/download/naisr_weights_v0/naisr_weights_starman.pth
 [AirwayModel]: https://github.com/uncbiag/NAISR/releases/download/naisr_weights_v0/naisr_weights_pediatric_airway.pth
+
+
+## Visualization of Existing Shape Space
+To get the shape space like the following figures for the three datasets used in the paper, one just need to apply the model weights with the following command, 
+
+First, download the `NAISR model weights`: vitb_sax1 (408M), vitb_sax2 (435M), and vitb_sax2_ft (435M). 
+These weights will be automatically saved to the ``weights`` folder.
+```
+python download.py
+```
+
+Run interactive GUI with the downloaded weights. The ``assets`` contains images for demo.
+```
+./run_demo.sh
+```
+
+
+
+
+## Customize
+### Data Preprocessing
+
+### Training
+
+### Testing
+
+### Application - Visualization of Your Shape Space
+
+
+
 
 Instructions on the way...
 
