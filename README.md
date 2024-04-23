@@ -49,15 +49,18 @@ Run interactive GUI with the downloaded weights. The ``assets`` contains images 
 ./run_demo.sh
 ```
 
-We train and test our method on three datasets: DAVIS, COCO+LVIS, and HQSeg-44K.
+We train and test our method on three datasets: Starman, ADNI Hippocampus, and Pedeatric Airway.
 
-| Dataset   |                      Description             |           Download Link              |
-|-----------|----------------------------------------------|:------------------------------------:|
-|DAVIS      |  345 images with one object each (test)      |  [DAVIS.zip (43 MB)][DAVIS]          |
-|HQSeg-44K  |  44320 images (train); 1537 images (val)     |  [official site][HQSeg]              |
-|COCO+LVIS* |  99k images with 1.5M instances (train)      |  [original LVIS images][LVIS] + <br> [combined annotations][COCOLVIS_annotation] |
+| Dataset   |                      Description             |           Dataset Link              |   Model Download Link              |
+|-----------|----------------------------------------------|:------------------------------------:|:------------------------------------:|
+|Starman      |  simulated 2D Starman shapes      |  [simulation code)][Starman]          |
+|ADNI Hippocampus  |  1632 hippocampus from ADNI     |  [official site][ADNI]              |
+|Pedeatric Airway |  357 pediatric airway shapes      |  NA |
 
 
+
+[ADNI]: https://ida.loni.usc.edu/login.jsp?project=ADNI
+[Starman]: 
 
 Instructions on the way...
 
