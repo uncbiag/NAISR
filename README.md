@@ -1,35 +1,78 @@
 # <img src="NAISRicon.svg" width="35" height="35"> NAISR: A 3D Neural Additive Model for Interpretable Shape Representation
+
 Pytorch implementation for our `ICLR 2024 Spotlight` paper <br>
 [NAISR: A 3D Neural Additive Model for Interpretable Shape Representation](https://arxiv.org/abs/2303.09234), ICLR 2024. <br>
 Yining Jiao, Carlton Zdanski, Julia Kimbell, Andrew Prince, Cameron Worden, Samuel Kirse, Christopher Rutter, Benjamin Shields, William Dunn, Jisan Mahmud, Marc Niethammer. <br>
 UNC-Chapel Hill
+
 #### [Paper](https://arxiv.org/abs/2303.09234) | [Project Page](https://uncbiag.github.io/NAISR/) | [Demos](https://colab.research.google.com/drive/1OudGynEydIXpAgfA9lvi5d0L86kK-uwg?usp=sharing)
 
 
-# NAISR: A 3D Neural Additive Model for Interpretable Shape Representation
 <div align=center><img src="https://github.com/uncbiag/NAISR/blob/main/figs/NAISRoverviewwide.svg?raw=true" width="1000" height="600"/></div>
 
-This is the official implenmentation for,
+Please cite as:
+```
+@inproceedings{
+jiao2024naisr,
+title={\texttt{NAISR}: A 3D Neural Additive Model for Interpretable Shape Representation},
+author={Yining Jiao and Carlton Jude ZDANSKI and Julia S Kimbell and Andrew Prince and Cameron P Worden and Samuel Kirse and Christopher Rutter and Benjamin Shields and William Alexander Dunn and Jisan Mahmud and Marc Niethammer},
+booktitle={The Twelfth International Conference on Learning Representations},
+year={2024},
+url={https://openreview.net/forum?id=wg8NPfeMF9}
+}
+```
 
-
-**NAISR: A 3D Neural Additive Model for Interpretable Shape Representation.**   
-Yining Jiao, Carlton Zdanski, Julia Kimbell, Andrew Prince, Cameron Worden, Samuel Kirse, Christopher Rutter, Benjamin Shields, William Dunn, Jisan Mahmud, Marc Niethammer. https://arxiv.org/abs/2303.09234
 
 An update is coming soon
 
-## Installation
 
-## Usage
+## Installation
+The code is tested with ``python=3.9``, ``torch=2.1.0``, ``torchvision=0.15.2``.
+```
+git clone https://github.com/uncbiag/NAISR
+cd NAISR
+```
+Now, create a new conda environment and install required packages accordingly.
+```
+conda create -n naisr python=3.9
+conda activate naisr
+pip install -r requirements.txt
+
+## Getting Started
+First, download three model weights: vitb_sax1 (408M), vitb_sax2 (435M), and vitb_sax2_ft (435M). These weights will be automatically saved to the ``weights`` folder.
+```
+python download.py
+```
+```
+Run interactive GUI with the downloaded weights. The ``assets`` contains images for demo.
+```
+./run_demo.sh
+```
+
+We train and test our method on three datasets: DAVIS, COCO+LVIS, and HQSeg-44K.
+
+| Dataset   |                      Description             |           Download Link              |
+|-----------|----------------------------------------------|:------------------------------------:|
+|DAVIS      |  345 images with one object each (test)      |  [DAVIS.zip (43 MB)][DAVIS]          |
+|HQSeg-44K  |  44320 images (train); 1537 images (val)     |  [official site][HQSeg]              |
+|COCO+LVIS* |  99k images with 1.5M instances (train)      |  [original LVIS images][LVIS] + <br> [combined annotations][COCOLVIS_annotation] |
+
+
 
 Instructions on the way...
 
+
+
+
+
 ## Cite this work
 ```
-@article{jiao2023naisr,
-  title={NAISR: A 3D Neural Additive Model for Interpretable Shape Representation},
-  author={Jiao, Yining and Zdanski, Carlton and Kimbell, Julia and Prince, Andrew and Worden, Cameron and Kirse, Samuel and Rutter, Christopher and Shields, Benjamin and Dunn, William and Mahmud, Jisan and others},
-  journal={arXiv preprint arXiv:2303.09234},
-  year={2023}
+@inproceedings{
+jiao2024naisr,
+title={\texttt{NAISR}: A 3D Neural Additive Model for Interpretable Shape Representation},
+author={Yining Jiao and Carlton Jude ZDANSKI and Julia S Kimbell and Andrew Prince and Cameron P Worden and Samuel Kirse and Christopher Rutter and Benjamin Shields and William Alexander Dunn and Jisan Mahmud and Marc Niethammer},
+booktitle={The Twelfth International Conference on Learning Representations},
+year={2024},
+url={https://openreview.net/forum?id=wg8NPfeMF9}
 }
-
-
+```
