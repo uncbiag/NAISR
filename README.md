@@ -1,7 +1,7 @@
 # <img src="NAISRicon.svg" width="35" height="35"> NAISR: A 3D Neural Additive Model for Interpretable Shape Representation
 
-Pytorch implementation for our `ICLR 2024 Spotlight` paper <br>
-[NAISR: A 3D Neural Additive Model for Interpretable Shape Representation](https://arxiv.org/abs/2303.09234), ICLR 2024. <br>
+Pytorch implementation for our `NAISR` paper <br>
+[NAISR: A 3D Neural Additive Model for Interpretable Shape Representation](https://arxiv.org/abs/2303.09234), ICLR 2024 Spotlight. <br>
 Yining Jiao, Carlton Zdanski, Julia Kimbell, Andrew Prince, Cameron Worden, Samuel Kirse, Christopher Rutter, Benjamin Shields, William Dunn, Jisan Mahmud, Marc Niethammer. <br>
 UNC-Chapel Hill
 
@@ -39,7 +39,13 @@ conda activate naisr
 pip install -r requirements.txt
 ```
 
+>[!NOTE]
+>For the three datasets used in `NAISR` paper, we provided this [Colab demo](https://colab.research.google.com/drive/1OudGynEydIXpAgfA9lvi5d0L86kK-uwg) to investigate the shapes learned with `NAISR`. <br>
+We also provide the instructions on this page to apply `NAISR` to your customized shape analysis questions. 
+
 ## Getting Started
+
+First 
 First, download three model weights: vitb_sax1 (408M), vitb_sax2 (435M), and vitb_sax2_ft (435M). These weights will be automatically saved to the ``weights`` folder.
 ```
 python download.py
@@ -50,7 +56,9 @@ Run interactive GUI with the downloaded weights. The ``assets`` contains images 
 ./run_demo.sh
 ```
 
-We train and test our method on three datasets: Starman, ADNI Hippocampus, and Pedeatric Airway.
+
+
+We train and test our method on three datasets: Starman, ADNI Hippocampus, and Pediatric Airways.
 
 | Dataset   |                      Description             |           Dataset Link              |   Model Link              |
 |-----------|----------------------------------------------|:------------------------------------:|:------------------------------------:|
