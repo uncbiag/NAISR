@@ -74,7 +74,7 @@ python download.py
 
 Run interactive GUI with the downloaded weights. The ``assets`` contains images for demo.
 ```
-./run_demo.sh
+python evolution_shapematrix.py -examples/hippocampus/naigsr_0920_base.json
 ```
 
 
@@ -83,6 +83,71 @@ Run interactive GUI with the downloaded weights. The ``assets`` contains images 
 ## Customize
 ### Data Preprocessing
 
+#### Alignment with Rigid Transformation
+The shapes to explore need to be registered with a rigid transformation (translation + rotation). 
+If paired point clouds are available, we recommend to use ; otherwise, we recommend to use ICP to register the point clouds. 
+In our case, we use airway landmarks to learn the rigid transformation; and ICP algorithms to register the point clouds of the hippocampi.
+
+#### SDF Extraction
+
+###
+```json
+ {
+  "Description" : [ "This experiment learns a shape representation for starman dataset." ],
+  "Device":0, 
+  "DataSource": {"train": "/home/jyn/NAISR/examples/starman/2dshape_train_with_temp.csv",
+                 "test": "/home/jyn/NAISR/examples/starman/2dshape_test_with_temp.csv"},
+  "Split": null,
+  "Network": "DeepNAIGSR",
+  "NumEpochs": 300,
+  "LoggingRoot": "/playpen-raid/jyn/NAISR/log",
+  "ExperimentName": "DeepNAIGSR_STARMAN3D_0222_256_base",
+
+  "EpochsTilCkpt": 10,
+  "StepsTilSummary": 1000,
+  "UseLBFGS": false,
+  "DoublePrecision": false,
+  "CheckpointPath": "",
+  "CodeLength": 256,
+
+  "AdditionalSnapshots" : [ 50, 100, 200, 300, 400, 500 ],
+  "LearningRateSchedule" : [
+    {
+      "Type": "Step",
+      "Initial": 0.00005,
+      "Interval": 1000,
+      "Factor": 0.5
+    },
+    {
+      "Type": "Step",
+      "Initial":  0.001,
+      "Interval": 1000,
+      "Factor": 0.5
+    }],
+  "SamplesPerScene" : 750,
+  "BatchSize": 64,
+  "DataLoaderThreads": 4,
+  "ClampingDistance": 1,
+
+  "Articulation": true,
+  "NumAtcParts": 1,
+  "TrainWithParts": false,
+  "Class": "starman",
+  "Attributes": ["cov_1", "cov_2"],
+   "TemplateAttributes":  {"cov_1": 0, "cov_2": 0},
+  "Backbone": "siren",
+  "PosEnc": false,
+  "InFeatures": 2,
+  "HiddenFeatures": 256,
+  "HidenLayers": 6,
+  "OutFeatures": 1,
+  "Loss": {
+    "whether_sdf": true, 
+    "whether_normal_constraint": true, 
+    "whether_inter_constraint": true, 
+    "whether_eikonal": true,
+    "whether_code_regularization": true}
+```
 ### Training
 
 ### Testing
