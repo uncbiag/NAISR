@@ -66,8 +66,7 @@ We train and test our method on three datasets: Starman, ADNI Hippocampus, and P
 ## Visualization of Existing Shape Space
 To get the shape space like the following figures for the three datasets used in the paper, one just need to apply the model weights with the following command, 
 
-First, download the `NAISR model weights`: vitb_sax1 (408M), vitb_sax2 (435M), and vitb_sax2_ft (435M). 
-These weights will be automatically saved to the ``weights`` folder.
+First, download the `NAISR model weights`.  These weights will be automatically saved to the ``checkpoints`` folder.
 ```
 python download.py
 ```
