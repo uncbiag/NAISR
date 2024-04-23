@@ -51,16 +51,20 @@ Run interactive GUI with the downloaded weights. The ``assets`` contains images 
 
 We train and test our method on three datasets: Starman, ADNI Hippocampus, and Pedeatric Airway.
 
-| Dataset   |                      Description             |           Dataset Link              |   Model Download Link              |
+| Dataset   |                      Description             |           Dataset Link              |   Model Link              |
 |-----------|----------------------------------------------|:------------------------------------:|:------------------------------------:|
-|Starman      |  simulated 2D Starman shapes      |  [simulation code)][Starman]          |
-|ADNI Hippocampus  |  1632 hippocampus from ADNI     |  [official site][ADNI]              |
-|Pedeatric Airway |  357 pediatric airway shapes      |  NA |
+|Starman      |  simulated 2D Starman shapes      |  [simulation code)][StarmanData]          | [weights][StarmanModel]    | 
+|ADNI Hippocampus  |  1632 hippocampus from ADNI     |  [official site][ADNIData]              | [weights][ADNIModel]  |
+|Pedeatric Airway |  357 pediatric airway shapes      |  NA | [weights][AirwayModel]               |
 
 
 
-[ADNI]: https://ida.loni.usc.edu/login.jsp?project=ADNI
-[Starman]: 
+[ADNIData]: https://ida.loni.usc.edu/login.jsp?project=ADNI
+[StarmanData]: 
+
+[ADNIModel]: https://github.com/uncbiag/NAISR/releases/download/naisr_weights_v0/naisr_weights_adni.pth
+[StarmanModel]: https://github.com/uncbiag/NAISR/releases/download/naisr_weights_v0/naisr_weights_starman.pth
+[AirwayModel]: https://github.com/uncbiag/NAISR/releases/download/naisr_weights_v0/naisr_weights_pediatric_airway.pth
 
 Instructions on the way...
 
