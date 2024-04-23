@@ -37,13 +37,14 @@ Now, create a new conda environment and install required packages accordingly.
 conda create -n naisr python=3.9
 conda activate naisr
 pip install -r requirements.txt
+```
 
 ## Getting Started
 First, download three model weights: vitb_sax1 (408M), vitb_sax2 (435M), and vitb_sax2_ft (435M). These weights will be automatically saved to the ``weights`` folder.
 ```
 python download.py
 ```
-```
+
 Run interactive GUI with the downloaded weights. The ``assets`` contains images for demo.
 ```
 ./run_demo.sh
