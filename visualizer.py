@@ -16,7 +16,6 @@ import trimesh
 from naisr import diff_operators
 
 import pickle
-import pymeshfix as pmf
 import pandas as pd
 
 
