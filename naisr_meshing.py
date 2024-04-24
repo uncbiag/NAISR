@@ -344,7 +344,7 @@ def create_mesh_3d_reconstruction(
 
     head = 0
     num_samples = N ** 3
-    max_batch = 64 ** dim
+    max_batch = 32 ** dim
 
     # NOTE: the voxel_origin is actually the (bottom, left, down) corner, not the middle
     voxel_origin = np.array([-1., -1., -1.]) * 3
