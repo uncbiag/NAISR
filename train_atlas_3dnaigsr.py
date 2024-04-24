@@ -304,10 +304,33 @@ def main_function(experiment_directory, clip_grad=True, loss_schedules=None):
             attributes=specs['Attributes'],
             split='test')
 
+    elif shapetype == 'starman':
+        train_sdf_dataset = naisr.Starman2DShapeDataset(
+            filename_datasource=data_source,
+            attributes=specs['Attributes'],
+            split='train')
+
+        # test_sdf_dataset = naisr.Starman2DShapeDataset(
+        #     filename_datasource=data_source,
+        #     attributes=specs['Attributes'],
+        #     split='test')
+
+    elif shapetype == 'ADNI':
+        train_sdf_dataset = naisr.ADNI3DShapeDataset(
+            filename_datasource=data_source,
+            filename_split=split_file,
+            attributes=specs['Attributes'],
+            split='train')
+
+        # test_sdf_dataset = naisr.Starman2DShapeDataset(
+        #     filename_datasource=data_source,
+        #     filename_split = split_file,
+        #     attributes=specs['Attributes'],
+        #     split='test')
 
 
     batch_size = specs["BatchSize"]
-    num_data_loader_threads = specs["DataLoaderThreads"]
+    num_data_loader_threads = 1#specs["DataLoaderThreads"]
 
 
     train_dataloader = data_utils.DataLoader(
@@ -319,7 +342,7 @@ def main_function(experiment_directory, clip_grad=True, loss_schedules=None):
     )
 
     val_dataloader = data_utils.DataLoader(
-        test_sdf_dataset,
+        train_sdf_dataset,
         batch_size=batch_size,
         shuffle=False,
         num_workers=num_data_loader_threads,
@@ -389,7 +412,7 @@ def main_function(experiment_directory, clip_grad=True, loss_schedules=None):
 
         for epoch in range(num_epochs):
 
-            if not epoch % epochs_til_checkpoint and epoch:
+            if not epoch % epochs_til_checkpoint or (epoch + 1) == num_epochs:
                 #torch.save(model.state_dict(), os.path.join(checkpoints_dir, 'model_epoch_%04d.pth' % epoch))
                 np.savetxt(os.path.join(checkpoints_dir, 'train_losses_epoch_%04d.txt' % epoch), np.array(train_losses))
                 save_current(epoch)
@@ -490,11 +513,7 @@ def main_function(experiment_directory, clip_grad=True, loss_schedules=None):
                         #with torch.no_grad():
                         val_losses = []
                         for (model_input, attributes, gt, indices) in val_dataloader:
-                            model_input = model_input.to(device)  # {key: value.cuda() for key, value in model_input.items()}
-                            #template_input = template_input.to(device)
-
-                            #indices = indices.unsqueeze(-1).repeat(1, num_samp_per_scene).view(-1)
-                            #batch_vecs = lat_vecs(indices)
+                            model_input = model_input.to(device)
 
                             indices = indices[:, None].repeat(1, num_samp_per_scene).to(
                                 device)  # indices.unsqueeze(-1).repeat(1, num_samp_per_scene).view(-1).to(device)
@@ -505,7 +524,7 @@ def main_function(experiment_directory, clip_grad=True, loss_schedules=None):
                                 if not isinstance(value, list):
                                     gt[key] = value.to(device)
 
-                            gt['sdf'] = torch.clamp(gt['sdf'],-1., 1.)
+                            gt['sdf'] = torch.clamp(gt['sdf'], -1., 1.)
 
                             if double_precision:
                                 model_input = model_input.to(device).double()
@@ -514,14 +533,12 @@ def main_function(experiment_directory, clip_grad=True, loss_schedules=None):
                                 gt = {key: value.to(device).double() for key, value in gt.items()}
 
 
-                            model_output = model(model_input,attributes, batch_vecs)
-                            model_output['model_out']  =torch.clamp(model_output['model_out'], -1., 1.)
+                            try:
+                                model_output = model(model_input, attributes, batch_vecs)
+                            except:
+                                print('1')
+                            model_output['model_out'] = torch.clamp(model_output['model_out'], -1., 1.)
 
-
-                            val_loss = loss_fn(model_output, gt, batch_vecs, epoch, dict_losses=specs['Loss']) #, whether_vec=True)
-                            val_losses.append(val_loss['sdf'].detach().cpu().numpy())
-
-                        writer.add_scalar("val_loss", np.mean(val_losses), total_steps)
                         summary_fn(model, model_input, batch_vecs, attributes, gt, model_output, writer, total_steps,  prefix='test_',device=device)
                         dsp_summary_fn(model, model_input, batch_vecs, attributes, gt, model_output, writer,
                                        total_steps,
@@ -538,11 +555,21 @@ def main_function(experiment_directory, clip_grad=True, loss_schedules=None):
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser(description="Train a DeepConvSDF autodecoder")
+    # arg_parser.add_argument(
+    #     "--experiment",
+    #     "-e",
+    #     dest="experiment_directory",
+    #     default='examples/pediatric_airway/naivf_test.json',
+    #     help="The experiment directory. This directory should include "
+    #          + "experiment specifications in 'specs.json', and logging will be "
+    #          + "done in this directory as well.",
+    # )
+
     arg_parser.add_argument(
         "--experiment",
         "-e",
         dest="experiment_directory",
-        default='examples/pediatric_airway/naivf_deepnaigsr_l2.json',
+        default='examples/pediatric_airway/naigsr_0918_inv_sampling.json',
         help="The experiment directory. This directory should include "
              + "experiment specifications in 'specs.json', and logging will be "
              + "done in this directory as well.",

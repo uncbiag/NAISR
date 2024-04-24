@@ -48,10 +48,8 @@ def transport(
     latent_size,
     test_sdf,
     attributes,
-        gt,
+    gt,
     stat,
-    clamp_dist,
-    num_samples=30000,
     lr=5e-4,
     l2reg=False,
 ):
@@ -70,120 +68,37 @@ def transport(
     else:
         latent = torch.normal(stat[0].detach(), stat[1].detach()).to(device)
     latent.requires_grad = True
-    # define attributes
-    attributes_unknown = {}
-    for name, value in attributes.items():
-        attributes_unknown[name] = torch.ones(1, 1).normal_(mean=0, std=stat).to(device)
-        #attributes_unknown[name].requires_grad = True
-    #optimizer = torch.optim.Adam([latent] + [attributes_unknown[name] for name in attributes.keys()], lr=lr)
+    # # define attributes
+    # attributes_unknown = {}
+    # for name, value in attributes.items():
+    #     attributes_unknown[name] = torch.ones(1, 1).normal_(mean=0, std=stat).to(device)
 
-    optimizer_lat = torch.optim.SGD([latent], lr=lr)
-    optimizer_atc = torch.optim.SGD([attributes_unknown[name] for name in attributes.keys()], lr=lr*1)
+    optimizer_lat = torch.optim.Adam([latent], lr=lr)
 
     loss_num = 0
-    #loss_l1 = torch.nn.L1Loss()
     loss_fn = loss_pointcloud_sdf
-    '''
+
+
     for e in range(num_iterations):
 
         decoder.eval()
-        xyz = test_sdf[:, :, 0:3]
-
-        #adjust_learning_rate(lr, optimizer, e, decreased_by, adjust_lr_every)
+        xyz = test_sdf #[:, :, 0:3]
 
         adjust_learning_rate(lr, optimizer_lat, e, decreased_by, adjust_lr_every)
-        adjust_learning_rate(lr*1, optimizer_atc, e, decreased_by, adjust_lr_every)
-
-
-        #optimizer.zero_grad()
-
-
-        latent_inputs = latent.expand(num_samples, -1)
-        #atc = attributes[None, :].expand(num_samples, -1)
-        #inputs = torch.cat([latent_inputs, xyz, atc], 1).to(device)
-        model_output = decoder(xyz, attributes_unknown, latent_inputs[None, :, :], testing=False)
-        gt['sdf'] = torch.clamp(gt['sdf'], -1., 1.)
-        optimizer_lat.zero_grad()
-        optimizer_atc.zero_grad()
-        #specs['Loss']['whether_disentangle']=False
-        #specs['Loss']["whether_eikonal"]=False
-        losses = loss_fn(model_output, gt, latent_inputs, epoch=e, dict_losses=specs['Loss'])
-        loss = 0
-        for name, il in losses.items():
-            #if 'padding' not in name:
-            loss += il #losses['sdf']+ losses['normal_constraint'] + losses['inter_constraint'] #+ loss['eikonal']
-        #loss = loss_l1(pred_sdf, sdf_gt)
-        if l2reg:
-            loss += torch.mean(latent.pow(2))*10
-
-        loss.backward()
-        #optimizer.step()
-        optimizer_atc.step()
-        optimizer_lat.step()
-
-        if e % 50 == 0:
-            logging.info(loss.cpu().data.numpy())
-            logging.info(e)
-            logging.info(latent.norm())
-        loss_num = loss.cpu().data.numpy()
-
-    return loss_num, latent, attributes_unknown
-
-    '''
-    '''
-    for e in range(num_iterations//8):
-        latent.requires_grad = False
-        decoder.eval()
-        xyz = test_sdf[:, :, 0:3]
-
-        adjust_learning_rate(lr*10, optimizer_atc, e, decreased_by, adjust_lr_every)
-
-        latent_inputs = latent.expand(num_samples, -1)
-        model_output = decoder(xyz, attributes_unknown, torch.zeros_like(latent_inputs[None, :, :]), testing=True)
-        gt['sdf'] = torch.clamp(gt['sdf'], -1., 1.)
-        optimizer_atc.zero_grad()
-
-        losses = loss_fn(model_output, gt, torch.zeros_like(latent_inputs[None, :, :]), epoch=e, dict_losses=specs['Loss'])
-        loss = 0
-        for name, il in losses.items():
-            #if 'padding' in name:
-            loss += il
-        #if l2reg:
-        #    loss += torch.mean(latent.pow(2))
-        loss.backward()
-        optimizer_atc.step()
-
-        if e % 50 == 0:
-            logging.info(loss.cpu().data.numpy())
-            logging.info(e)
-            logging.info(latent.norm())
-        loss_num = loss.cpu().data.numpy()
-
-    for name, value in attributes.items():
-        attributes_unknown[name].requires_grad = False
-    latent.requires_grad = True
-
-    print(attributes_unknown)
-    '''
-    for e in range(num_iterations):
-
-        decoder.eval()
-        xyz = test_sdf[:, :, 0:3]
-
-        adjust_learning_rate(lr, optimizer_lat, e, decreased_by, adjust_lr_every)
-        latent_inputs = latent.expand(num_samples, -1)
+        latent_inputs = latent.expand(xyz.shape[-2], -1)
         model_output = decoder(xyz, attributes, latent_inputs[None, :, :], testing=False,training=False)
         gt['sdf'] = torch.clamp(gt['sdf'], -1., 1.)
         optimizer_lat.zero_grad()
 
         losses = loss_fn(model_output, gt, latent_inputs, epoch=e, dict_losses=specs['Loss'])
         loss = 0
-        specs['Loss']['whether_disentangle'] = False
+        #specs['Loss']['whether_disentangle'] = False
         for name, il in losses.items():
-            if 'code_reg'  in name:
-                loss += (il*10)
-            else:
-                loss += il
+            loss += il
+            # if 'code_reg'  in name:
+            #     loss += (il*10)
+            # else:
+            #     loss += il
 
         loss.backward()
         optimizer_lat.step()
@@ -209,7 +124,7 @@ if __name__ == "__main__":
         "--experiment",
         "-e",
         dest="experiment_directory",
-        default='examples/pediatric_airway/naivf_deepnaigsr.json',
+        default='examples/pediatric_airway/naigsr_icon_no_disent.json',  #'examples/starman/naigsr.json', #'examples/pediatric_airway/naivf_deepnaigsr.json',
         required=False,
         help="The experiment directory which includes specifications and saved model "
         + "files to use for reconstruction",
@@ -218,20 +133,21 @@ if __name__ == "__main__":
         "--checkpoint",
         "-c",
         dest="checkpoint",
-        default="epoch_3000",
+        default="latest",
         help="The checkpoint weights to use. This can be a number indicated an epoch "
         + "or 'latest' for the latest weights (this is the default)",
     )
     arg_parser.add_argument(
         "--iters",
+        "-i",
         dest="iterations",
-        default=800,
+        default=200,
         help="The number of iterations of latent code optimization to perform.",
     )
     arg_parser.add_argument(
         "--skip",
         dest="skip",
-        action="store_true",
+        default=False,
         help="Skip meshes which have already been reconstructed.",
     )
     naisr.add_common_args(arg_parser)
@@ -257,6 +173,9 @@ if __name__ == "__main__":
         )
 
     specs = json.load(open(specs_filename))
+
+
+
     device = specs['Device']
     root_path = os.path.join(specs['LoggingRoot'], specs['ExperimentName'])
 
@@ -304,21 +223,45 @@ if __name__ == "__main__":
         os.makedirs(transport_codes_dir)
 
 
-    #cases = naisr.get_youngest_ids(specs["Split"], split='test')
-    list_patient_scans = naisr.get_patients_for_transport(specs["DataSource"], specs["Split"], split='test_multiple')
-    training_cases = naisr.get_ids(specs["Split"], split='train')
-    import pandas as pd
-    df_data = pd.read_csv(specs["DataSource"], header=0)
+
+
+    # loading dataset
+    shapetype = specs["Class"]
+    filename_dataset = specs["DataSource"]
+    num_dim = specs["InFeatures"]
+
+    if shapetype == 'Airway':
+        cases = naisr.get_airway_ids(specs["Split"], split='test')
+        training_cases = naisr.get_airway_ids(specs["Split"], split='train')
+        load_one_case = naisr.get_airway_data_for_id
+        df_data = pd.read_csv(filename_dataset)
+        list_patient_scans = naisr.get_airways_for_transport(specs["DataSource"], specs["Split"], split='test_multiple')
+    elif shapetype == 'starman':
+        cases = naisr.get_starman_ids(filename_dataset, 'test')
+        training_cases = naisr.get_starman_ids(filename_dataset, 'train')
+        load_one_case = naisr.get_starman_data_for_id
+        df_data = pd.read_csv(filename_dataset['test'])
+        list_patient_scans = naisr.get_starmans_for_transport(specs["DataSource"], split='test')
+    elif shapetype == 'ADNI':
+        cases = naisr.get_adni_ids(specs["Split"], split='test')
+        training_cases = naisr.get_adni_ids(specs["Split"], split='train')
+        load_one_case = naisr.get_adni_data_for_id
+        df_data = pd.read_csv(filename_dataset)
+        list_patient_scans = naisr.get_adni_for_transport(specs["DataSource"], specs["Split"], split='test_multiple')
+
+
 
     list_metrics = []
-    for transport_name in ['all', 'age', 'weight']:
+    transport_groups = ['all'] + specs["Attributes"]
+    for transport_name in transport_groups:
         transport_covariate_meshes_dir = os.path.join(transport_meshes_dir, transport_name)
         if not os.path.isdir(transport_covariate_meshes_dir):
             os.makedirs(transport_covariate_meshes_dir)
 
         for current_patient in list_patient_scans:
             test_idx = current_patient['youngest_scan']
-            start_arr_samples, start_attributes, start_gt  = naisr.get_data_for_id(test_idx, df_data, training_cases, specs["Attributes"])
+            start_arr_samples, start_attributes, start_gt = load_one_case(test_idx, df_data, training_cases,
+                                                                          specs["Attributes"], stage='test')
             start_arr_samples = start_arr_samples.to(device)
             start_attributes = {key: value.to(device) for key, value in start_attributes.items()}
 
@@ -328,6 +271,17 @@ if __name__ == "__main__":
 
             transport_covariate_meshes_dir_subj = os.path.join(transport_covariate_meshes_dir, str(test_idx))
             cond_mkdir(transport_covariate_meshes_dir_subj)
+
+            if args.skip:
+                if shapetype != 'starman':
+                    stl_path = os.path.join(transport_covariate_meshes_dir_subj, 'surface.stl')
+                    if os.path.exists(stl_path):
+                        continue
+                else:
+                    stl_path = os.path.join(transport_covariate_meshes_dir_subj, 'surface.vtk')
+                    if os.path.exists(stl_path):
+                        continue
+
 
             for k in range(repeat):
 
@@ -342,8 +296,6 @@ if __name__ == "__main__":
                     start_attributes,
                     start_gt,
                     0.01,  # [emp_mean,emp_var],
-                    0.1,
-                    num_samples=30000,
                     lr=5e-3,
                     l2reg=True,
                 )
@@ -367,14 +319,17 @@ if __name__ == "__main__":
 
                 start = time.time()
                 with torch.no_grad():
-                    dict_metrics = naisr_meshing.create_mesh_3dairway_reconstruction(decoder,
-                                                                                     start_latent[None, :, ],
-                                                                                     infered_start_attributes,
-                                                                                     start_gt,
-                                                                                     transport_covariate_meshes_dir_subj,
-                                                                                     output_type='model_out', N=256,
-                                                                                     device=specs['Device'],
-                                                                                     EVALUATE=True)
+                    dict_metrics = naisr_meshing.create_mesh_reconstruction(shapetype)(decoder,
+                                                                             start_latent[None, :, ],
+                                                                             infered_start_attributes,
+                                                                             start_gt,
+                                                                             transport_covariate_meshes_dir_subj,
+                                                                             output_type='model_out',
+                                                                            dim=num_dim,
+                                                                            shapetype=shapetype,
+                                                                            N=256,
+                                                                             device=specs['Device'],
+                                                                             EVALUATE=True)
 
                     if not os.path.exists(os.path.dirname(latent_filename)):
                         os.makedirs(os.path.dirname(latent_filename))
@@ -387,7 +342,7 @@ if __name__ == "__main__":
             # transporting to other covariates
             other_scans= current_patient['other_scans']
             for ith_scan_to_transp in other_scans:
-                arr_samples, attributes, gt  = naisr.get_data_for_id(ith_scan_to_transp, df_data, training_cases, specs["Attributes"])
+                arr_samples, attributes, gt  = load_one_case(ith_scan_to_transp, df_data, training_cases, specs["Attributes"], stage='test')
                 arr_samples = arr_samples.to(device)
                 for key, value in gt.items():
                     if isinstance(value, torch.Tensor):
@@ -398,25 +353,29 @@ if __name__ == "__main__":
 
                 attributes = {key: value.to(device) for key, value in attributes.items()}
 
+
+                start = time.time()
                 new_covariates = transport_covariates(attributes, infered_start_attributes, start_attributes, diff_names='all')
                 latent_inputs = start_latent.expand(arr_samples.shape[0], -1)
-
 
 
                 if not save_latvec_only:
                     latent_filename = os.path.join(transport_codes_dir, str(ith_scan_to_transp) + ".pth")
 
-                    start = time.time()
-                    with torch.no_grad():
-                        dict_metrics = naisr_meshing.create_mesh_3dairway_reconstruction(decoder,
-                                                                                         latent_inputs[None, :, ],
-                                                                                         new_covariates,
-                                                                                         gt,
-                                                                                         transport_covariate_meshes_dir_subj,
-                                                                                         output_type='model_out', N=256,
-                                                                                         device=specs['Device'],
-                                                                                         EVALUATE=True)
 
+                    with torch.no_grad():
+                        dict_metrics = naisr_meshing.create_mesh_reconstruction(shapetype)(decoder,
+                                                                                 latent_inputs[None, :, ],
+                                                                                 new_covariates,
+                                                                                 gt,
+                                                                                 transport_covariate_meshes_dir_subj,
+                                                                                 output_type='model_out',
+                                                                                dim=num_dim,
+                                                                                shapetype=shapetype,
+                                                                                 N=256,
+                                                                                 device=specs['Device'],
+                                                                                 EVALUATE=True)
+                        logging.info("transport to new time: {}".format(time.time() - start))
                         if not os.path.exists(os.path.dirname(latent_filename)):
                             os.makedirs(os.path.dirname(latent_filename))
                         torch.save(latent_inputs.unsqueeze(0), latent_filename)

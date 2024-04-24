@@ -25,7 +25,6 @@ def reconstruct(
     attributes,
     stat,
     clamp_dist,
-    num_samples=30000,
     lr=5e-4,
     l2reg=False,
 ):
@@ -53,8 +52,8 @@ def reconstruct(
 
     #optimizer = torch.optim.Adam([latent] + [attributes_unknown[name] for name in attributes.keys()], lr=lr)
 
-    optimizer_lat = torch.optim.SGD([latent], lr=lr)
-    optimizer_atc = torch.optim.SGD([attributes_unknown[name] for name in attributes.keys()], lr=lr)
+    optimizer_lat = torch.optim.Adam([latent], lr=lr)
+    optimizer_atc = torch.optim.Adam([attributes_unknown[name] for name in attributes.keys()], lr=lr)
 
     loss_num = 0
     #loss_l1 = torch.nn.L1Loss()
@@ -64,7 +63,7 @@ def reconstruct(
     for e in range(num_iterations):
 
         decoder.eval()
-        xyz = test_sdf[:, :, 0:3]
+        xyz = test_sdf#[:, :, 0:3]
         #sdf_gt = test_sdf[:, 3].unsqueeze(1)
 
         #sdf_gt = torch.clamp(sdf_gt, -clamp_dist, clamp_dist)
@@ -78,13 +77,19 @@ def reconstruct(
         optimizer_atc.zero_grad()
 
 
-        latent_inputs = latent.expand(num_samples, -1)
+        latent_inputs = latent.expand(xyz.shape[-2], -1)
 
         model_output = decoder(xyz, attributes_unknown, latent_inputs[None, :, :], training=False, testing=True)
         gt['sdf'] = torch.clamp(gt['sdf'], -1., 1.)
-        losses = loss_fn(model_output, gt, latent_inputs, epoch=e, dict_losses={})
+        model_output['model_out'] = torch.clamp(model_output['model_out'], -1., 1.)
+        specs['Loss']["whether_icon"] = False
+        specs['Loss']['whether_disentangle'] = False
+        specs['Loss']['whether_inv'] = False
+        specs['Loss']["whether_inv_sampling"] = False
+        losses = loss_fn(model_output, gt, latent_inputs, epoch=e, dict_losses=specs['Loss'])
         loss = 0
         for name, il in losses.items():
+            #loss += il
             if 'code_reg'  in name:
                 loss += (il*10)
             else:
@@ -105,7 +110,7 @@ def reconstruct(
 
 
 if __name__ == "__main__":
-
+    #os.environ["PYVISTA_OFF_SCREEN"] = "true"
     arg_parser = argparse.ArgumentParser(
         description="Use a trained DeepSDF decoder to reconstruct a shape given SDF "
         + "samples."
@@ -114,7 +119,7 @@ if __name__ == "__main__":
         "--experiment",
         "-e",
         dest="experiment_directory",
-        default='examples/pediatric_airway/naivf_deepnaisr.json',
+        default= 'examples/pediatric_airway/naivf_deepnaisr.json',
         required=False,
         help="The experiment directory which includes specifications and saved model "
         + "files to use for reconstruction",
@@ -123,12 +128,13 @@ if __name__ == "__main__":
         "--checkpoint",
         "-c",
         dest="checkpoint",
-        default="epoch_3000",
+        default="latest",
         help="The checkpoint weights to use. This can be a number indicated an epoch "
         + "or 'latest' for the latest weights (this is the default)",
     )
     arg_parser.add_argument(
         "--iters",
+        "-i",
         dest="iterations",
         default=800,
         help="The number of iterations of latent code optimization to perform.",
@@ -136,9 +142,10 @@ if __name__ == "__main__":
     arg_parser.add_argument(
         "--skip",
         dest="skip",
-        action="store_true",
+        default=True,
         help="Skip meshes which have already been reconstructed.",
     )
+
     naisr.add_common_args(arg_parser)
 
     args = arg_parser.parse_args()
@@ -162,7 +169,10 @@ if __name__ == "__main__":
         )
 
     specs = json.load(open(specs_filename))
+
+
     device = specs['Device']
+    num_dim = specs["InFeatures"]
     root_path = os.path.join(specs['LoggingRoot'], specs['ExperimentName'])
 
     decoder = eval(specs['Network'])(
@@ -176,6 +186,9 @@ if __name__ == "__main__":
         outermost_linear=False,
         pos_enc=specs['PosEnc'],
         latent_size=specs["CodeLength"])
+
+    pytorch_total_params = sum(p.numel() for p in decoder.parameters() if p.requires_grad)
+    print('The total number of parameters: ' + str(pytorch_total_params))
 
     latent_size = specs["CodeLength"]
     #decoder = arch.Decoder(num_atc_parts=specs["NumAtcParts"], do_sup_with_part=specs["TrainWithParts"])
@@ -210,14 +223,33 @@ if __name__ == "__main__":
         os.makedirs(reconstruction_codes_dir)
 
 
-    cases = naisr.get_ids(specs["Split"], split='test')
-    training_cases = naisr.get_ids(specs["Split"], split='train')
-    import pandas as pd
-    df_data = pd.read_csv(specs["DataSource"], header=0)
+    # loading dataset
+    shapetype = specs["Class"]
+    filename_dataset = specs["DataSource"]
+
+    if shapetype == 'Airway':
+        cases = naisr.get_airway_ids(specs["Split"], split='test')
+        training_cases = naisr.get_airway_ids(specs["Split"], split='train')
+        load_one_case = naisr.get_airway_data_for_id
+        df_data = pd.read_csv(filename_dataset)
+    elif shapetype == 'starman':
+        cases = naisr.get_starman_ids(filename_dataset, 'test')
+        training_cases = naisr.get_starman_ids(filename_dataset, 'train')
+        load_one_case = naisr.get_starman_data_for_id
+        df_data = pd.read_csv(filename_dataset['test'])
+    elif shapetype == 'ADNI':
+        cases = naisr.get_adni_ids(specs["Split"], split='test')
+        training_cases = naisr.get_adni_ids(specs["Split"], split='train')
+        load_one_case = naisr.get_adni_data_for_id
+        df_data = pd.read_csv(filename_dataset)
+        #a=np.random.randint(0, len(cases), len(cases))
+        #cases = cases[a]
+
 
     list_metrics = []
     for ii, test_idx in enumerate(cases):
-        arr_samples, attributes, gt  = naisr.get_data_for_id(test_idx, df_data, training_cases, specs["Attributes"])
+
+        arr_samples, attributes, gt = load_one_case(test_idx, df_data, training_cases, specs["Attributes"], stage='test')
 
         arr_samples = arr_samples.to(device)
         attributes = {key: value.to(device).float() for key, value in attributes.items()}
@@ -228,6 +260,16 @@ if __name__ == "__main__":
         reconstruction_meshes_dir_subj = os.path.join(reconstruction_meshes_dir, str(test_idx))
         cond_mkdir(reconstruction_meshes_dir_subj)
 
+        # test whether paht exist
+        if args.skip:
+            if shapetype != 'starman':
+                stl_path = os.path.join(reconstruction_meshes_dir_subj, 'surface.stl')
+                if os.path.exists(stl_path):
+                    continue
+            else:
+                stl_path = os.path.join(reconstruction_meshes_dir_subj, 'surface.vtk')
+                if os.path.exists(stl_path):
+                    continue
         #reconstruction_codes_dir_subj = os.path.join(reconstruction_codes_dir, str(gt['id'][0]))
         #cond_mkdir(reconstruction_codes_dir_subj)
         #print( str(gt['id']) + '-----')
@@ -244,7 +286,6 @@ if __name__ == "__main__":
                 attributes,
                 0.01,  # [emp_mean,emp_var],
                 0.1,
-                num_samples=30000,
                 lr=5e-3,
                 l2reg=True,
             )
@@ -253,8 +294,8 @@ if __name__ == "__main__":
             logging.info("current_error avg: {}".format((err_sum / (ii + 1))))
 
             #logging.info("latent: {}".format(latent.detach().cpu().numpy()))
-        for name, value in inferred_attributes.items():
-            inferred_attributes[name] = torch.tanh(inferred_attributes[name])
+        # for name, value in inferred_attributes.items():
+        #     inferred_attributes[name] = torch.tanh(inferred_attributes[name])
 
 
         print('attributes: ' + str(attributes))
@@ -265,14 +306,18 @@ if __name__ == "__main__":
             start = time.time()
             with torch.no_grad():
                 #print(reconstruction_meshes_dir_subj)
-                dict_metrics = naisr_meshing.create_mesh_3dairway_reconstruction(decoder, latent[None, :, ],
+                dict_metrics = naisr_meshing.create_mesh_reconstruction(shapetype)(decoder, latent[None, :, ],
                                                                                  inferred_attributes,
                                                                                  gt,
                                                                                  reconstruction_meshes_dir_subj,
-                                                                                 output_type='model_out', N=256,
+                                                                                 output_type='model_out',
+                                                                                 dim=num_dim,
+                                                                                 N=256,
+                                                                                   shapetype=shapetype,
                                                                                  device=specs['Device'],
-                                                                                 EVALUATE=True)
-                naisr_meshing.save_to_ply(decoder, latent[None, :, ], inferred_attributes, reconstruction_meshes_dir_subj, device)
+                                                                                 EVALUATE=True,
+                                                                                 )
+                #naisr_meshing.save_to_ply(decoder, latent[None, :, ], inferred_attributes, reconstruction_meshes_dir_subj, device)
 
                 if not os.path.exists(os.path.dirname(latent_filename)):
                     os.makedirs(os.path.dirname(latent_filename))

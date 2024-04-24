@@ -449,7 +449,7 @@ class DeepSDF(nn.Module):
                               first_omega_0=30.,
                               hidden_omega_0=30.).to(device)
 
-    def forward(self, coords, attributes, embedding):
+    def forward(self, coords, attributes, embedding, training=True, **kwargs):
         coords_init = coords.clone().detach().requires_grad_(True)  # allows to take derivative w.r.t. input\
         if self.pos_enc:
             enc_coords = self.pos_encoder(coords_init)

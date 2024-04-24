@@ -6,7 +6,8 @@
         content="Deformable Neural Radiance Fields creates free-viewpoint portraits (nerfies) from casually captured videos.">
   <meta name="keywords" content="Nerfies, D-NeRF, NeRF">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Rethinking Interactive Image Segmentation with Low Latency, High Quality, and Diverse Prompts</title>
+  <title>NAISR: A 3D Neural Additive Model for Interpretable Shape Representation
+</title>
 
   <!-- Global site tag (gtag.js) - Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-PYVRSFMDRL"></script>
@@ -39,6 +40,17 @@
   <script src="./static/js/bulma-carousel.min.js"></script>
   <script src="./static/js/bulma-slider.min.js"></script>
   <script src="./static/js/index.js"></script>
+<script type="text/javascript" async="" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+</script>
+    <link rel="stylesheet" type="text/css"
+    href="https://cdn.rawgit.com/dreampulse/computer-modern-web-font/master/fonts.css">
+<style>
+body {
+  font-family: "Computer Modern Sans", sans-serif;
+}
+</style>
 </head>
 <body>
 
@@ -47,28 +59,33 @@
     <div class="container is-max-desktop">
       <div class="columns is-centered">
         <div class="column has-text-centered">
-          <h2 class="title is-2 publication-title">Rethinking Interactive Image Segmentation <br> with Low Latency, High Quality, and Diverse Prompts</h2>
+          <h2 class="title is-2 publication-title"><tt>NAISR</tt>: A 3D Neural Additive Model for Interpretable Shape Representation</h2>
           <div class="is-size-5 publication-authors">
             <span class="author-block">
-              <a href="https://sites.google.com/cs.unc.edu/qinliu/home">Qin Liu</a>,</span>
-            <span class="author-block">
-              <a href="https://j-min.io">Jaemin Cho</a>,</span>
-            <span class="author-block">
-              <a href="https://www.cs.unc.edu/~mbansal/">Mohit Bansal</a>,</span>
+              <a href="https://jiaoyining.github.io/">Yining Jiao</a>,</span>
+            <span class="author-block">Carlton Zdanski, </span>
+            <span class="author-block">Julia Kimbell, </span>
+            <span class="author-block">Andrew Prince, </span>
+            <span class="author-block">Cameron Worden, </span>
+            <span class="author-block">Samuel Kirse, </span>
+            <span class="author-block">Christopher Rutter, </span>
+            <span class="author-block">Benjamin Shields, </span>
+            <span class="author-block">William Dunn, </span>
+            <span class="author-block">Jisan Mahmud, </span>
             <span class="author-block">
               <a href="https://biag.cs.unc.edu/">Marc Niethammer</a></span>
           </div>
 
           <div class="is-size-5 publication-authors">
             <span class="author-block">University of North Carolina at Chapel Hill</span> <br>
-            <span class="author-block">CVPR 2024</span>
+              <span class="author-block"><strong>ICLR 2024</strong>, <strong><font color=#ff00ff>Spotlight Top 5%</font></strong></span>
           </div>
 
           <div class="column has-text-centered">
             <div class="publication-links">
               <!-- PDF Link. -->
               <span class="link-block">
-                <a href="https://arxiv.org/abs/2404.00741"
+                <a href="https://arxiv.org/abs/2303.09234"
                    class="external-link button is-normal is-rounded is-dark">
                   <span class="icon">
                       <i class="fas fa-file-pdf"></i>
@@ -78,12 +95,22 @@
               </span>
               <!-- Code Link. -->
               <span class="link-block">
-                <a href="https://github.com/uncbiag/SegNext"
+                <a href="https://github.com/uncbiag/NAISR/tree/main"
                    class="external-link button is-normal is-rounded is-dark">
                   <span class="icon">
                       <i class="fab fa-github"></i>
                   </span>
                   <span>Code</span>
+                  </a>
+              </span>
+              <!-- video Link. -->
+              <span class="link-block">
+                <a href="https://www.youtube.com/watch?v=8wSIIPAvlLI&t=43s"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-youtube"></i>
+                  </span>
+                  <span>Video</span>
                   </a>
               </span>
               </div>
@@ -94,16 +121,20 @@
   </div>
 </section>
 
+
+
 <section class="hero teaser">
   <div class="container is-max-desktop">
     <div class="hero-body">
-      <center><img src="./static/images/teaser.png" width="750"></center>
+              <center><h2 class="title is-3">Motivation of <tt>NAISR</tt></h2></center>
+        <hr>
+      <center><img src="./static/images/motivation.svg" width="750"></center>
       <!-- <h2 class="subtitle has-text-centered"> -->
         <!-- We propose <span class="dnerf">SegNext</span> for next-generation promptable segmentation <br> with low latency, high quality, and diverse prompts.  -->
-        Conceptual comparison between our approach <span class="dnerf">SegNext</span> and prior state-of-the-art methods, SimpleClick and
-        SAM, for the interactive segmentation task. Our method combines the best of both worlds for interactive segmentation with low
-        latency, high quality, and diverse prompts.
-
+        For scientific and medical discovery, it is very important to capture the dependencies of shapes on covariates, e.g., growth charts are to describe how children's height and weight develop with age.
+        Despite the growth charts, a 3D shape representation is needed to describe how different covariates affect shapes.
+        <tt>NAISR</tt> is such a shape representation method to extrapolate the <font color=#1e90ff>complete</font>, <font color=orange>disentangled</font> <font color=#20b2aa>template</font> shape space
+        from <font color=#1e90ff>incomplete</font>, <font color=orange>entangled</font> and <font color=#20b2aa>individual</font> observations.
       <!-- </h2> -->
     </div>
   </div>
@@ -112,13 +143,11 @@
 <section class="hero teaser">
   <div class="container is-max-desktop">
     <div class="hero-body">
-      <center>
-      <img src="./static/images/medal.gif" width=220>
-      <img src="./static/images/bicyclestand.gif" width=317>
-      <img src="./static/images/crack.gif" width=220>
-    </center>
+      <center><img src="./static/images/methods_comp.png" width="750"></center>
       <!-- <h2 class="subtitle has-text-centered"> -->
-    <center>Demos of <span class="dnerf">SegNext</span> for high-quality segmentation on HQSeg-44K with One Click.</center>
+      Conceptual comparison between our approach <tt>NAISR</tt> and prior state-of-the-art for shape analysis tasks.
+      <tt>NAISR</tt> is the first implicit shape representation method to investigate an atlas-based representation of 3D shapes in a deformable, disentangleable, transferable and evolvable way.
+
       <!-- </h2> -->
     </div>
   </div>
@@ -126,81 +155,187 @@
 
 <section class="section">
   <div class="container is-max-desktop">
-    <div class="columns is-centered has-text-centered">
-      <div class="column is-four-fifths">
-        <h2 class="title is-3">Abstract</h2>
-        <div class="content has-text-justified">
+      <center><h2 class="title is-3">Abstract</h2></center>
+       <hr>
         <p>
-          The goal of interactive image segmentation is to delineate specific regions
-          within an image via visual or language prompts. Low-latency and high-quality
-          interactive segmentation with diverse prompts remain challenging for existing 
-          specialist and generalist models. Specialist models, with their limited 
-          prompts and task-specific designs, experience high latency because the image 
-          must be recomputed every time the prompt is updated, due to the joint 
-          encoding of image and visual prompts. Generalist models, exemplified by the 
-          Segment Anything Model (SAM), have recently excelled in prompt diversity and 
-          efficiency, lifting image segmentation to the foundation model era.
-          However, for high-quality segmentations, SAM still lags behind state-of-the-art
-           specialist models despite SAM being trained with ×100 more
-          segmentation masks. 
+        Deep implicit functions (DIFs) have emerged as a powerful paradigm for many computer vision tasks such as 3D shape reconstruction, generation, registration, completion, editing, and understanding.
+          However, given a set of 3D shapes with associated covariates there is at present no shape representation method which allows to precisely represent the shapes while capturing the individual dependencies on each covariate.
+          Such a method would be of high utility to researchers to discover knowledge hidden in a population of shapes.
+          For scientific shape discovery, we propose a 3D Neural Additive Model for Interpretable Shape Representation (<tt>NAISR</tt>) which describes individual shapes by deforming a shape atlas in accordance to the effect of disentangled covariates.
+          Our approach captures shape population trends and allows for patient-specific predictions through shape transfer.
+          <tt>NAISR</tt> is the first approach to combine the benefits of deep implicit shape representations with an atlas deforming according to specified covariates.
+          We evaluate <tt>NAISR</tt> with respect to shape reconstruction, shape disentanglement, shape evolution, and shape transfer on three datasets:
+            1) <i>Starman</i>, a simulated 2D shape dataset; 2) the ADNI hippocampus 3D shape dataset; and 3) a pediatric airway 3D shape dataset.
+          Our experiments demonstrate that <tt>NAISR</tt> achieves excellent shape reconstruction performance while retaining interpretability.
         </p>
-        <p>
-          In this work, we delve deep into the
-          architectural differences between the two types of models.
-          We observe that dense representation and fusion of visual
-          prompts are the key design choices contributing to the high
-          segmentation quality of specialist models. In light of this,
-          we reintroduce this dense design into the generalist models, to facilitate the development of generalist models with
-          high segmentation quality. To densely represent diverse visual prompts, we propose to use a dense map to capture
-          five types: clicks, boxes, polygons, scribbles, and masks.
-        </p>
-        <p>
-          Thus, we propose SegNext, a next-generation interactive
-          segmentation approach offering low latency, high quality,
-          and diverse prompt support. Our method outperforms current state-of-the-art methods on HQSeg-44K and DAVIS,
-          both quantitatively and qualitatively.
-        </p>
-       </div>
-      </div>
     </div>
-  </div>
+
 </section>
 
+<!-- Paper video. -->
+<div class="columns is-centered has-text-centered">
+  <div class="column is-four-fifths">
+    <h2 class="title is-3">Video</h2>
+    <div class="publication-video">
+     <iframe src="https://www.youtube.com/embed/8wSIIPAvlLI?si=u7eh4wu_7uD_O96_" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    </div>
+  </div>
+</div>
 
 <section class="section">
   <div class="container is-max-desktop">    
     <center><h2 class="title is-3">Method</h2></center>
-    <center><img src="./static/images/method.png"></center>
-    SegNext overview. We use a three-channel dense map to represent five diverse visual prompts: clicks, boxes, polygons, scribbles, 
-    and masks. The embeddings of image and visual prompts are fused by element-wise addition, followed by an enhanced fusion via one
-    or two self-attention blocks. The language prompt is encoded as a vector by CLIP, followed by querying the image embedding via
-    cross-attention blocks for the mask embeddings. A lightweight decoder processes the mask embeddings for segmentation.  
+              <hr>
+    <center><img src="./static/images/NAISRoverview.png" vspace="20"></center>
+    <strong>Neural Additive Implicit Shape Representation.</strong>
+    During training we learn the template $\mathcal{T}$ and the multi-layer perceptrons (MLPs)  $\{g_i\}$ predicting the covariate-wise displacement fields $\{\mathbf{d}_i\}$.
+    The displacement fields are added to obtain the overall displacement field $\mathbf{d}$ defined in the target space;
+    $\mathbf{d}$ provides the displacement between the deformed template shape $\mathcal{T}$ and the target shape. Specifically the template shape is queried not at its original coordinates $\mathbf{p}$,
+    but at $\tilde{\mathbf{p}}=\mathbf{p}+\mathbf{d}$ effectively spatially deforming the template.
+    At test time we evaluate the trained MLPs for shape reconstruction, evolution, disentanglement, and shape transfer.
   </div>
 </section>
 
 
 
+
 <section class="section">
-  <div class="container is-max-desktop">    
-    <center><h2 class="title is-3">Experiments</h2></center><br>
-    <center><img src="./static/images/result_click_curve.png"></center>
-    Click to segmentation evaluation on HQSeg-44K and DAVIS. With varying numbers of clicks, our method consistently outperforms 
-    existing competitive approaches. The metric is mean Intersection over Union (mIoU).
+    <!-- Animation. -->
+    <div class="columns is-centered">
+        <div class="container is-max-desktop">
+        <center><h2 class="title is-3">Disentangled Shape Evolutions</h2></center>
+        <hr>
+        <div class="content has-text-justified">
+          <p>
+              Disentangled Shape Evolution for <i>Starman</i>. The blue shapes are the groundtruth shapes and the red shapes are the reconstructions.
+          </p>
+        </div>
+        <div class="columns is-vcentered interpolation-panel">
+            <div class="column interpolation-video-column">
+                <div id="wrapper-starman-hand">
+                  Loading...
+                </div>
+                <input class="slider is-fullwidth is-large is-info"
+                       id="starman-hand-slider"
+                       step="1" min="0" max=20 value="0" type="range">
+                <center><p class="is-bold">Arm Movement</p></center>
+            </div>
 
-    <br><br><br>
+            <div class="column interpolation-video-column">
+                <div id="wrapper-starman-leg">
+                  Loading...
+                </div>
+                <input class="slider is-fullwidth is-large is-info"
+                       id="starman-leg-slider"
+                       step="1" min="0" max=20 value="0" type="range">
+                  <center><p class="is-bold">Leg Movement</p></center>
+            </div>
+        </div>
+        <hr>
+        <div class="content has-text-justified">
+          <p>
+            Disentangled Shape Evolution for Pediatric Airways.
+          </p>
+        </div>
+        <div class="columns is-vcentered interpolation-panel">
+            <div class="column interpolation-video-column">
+                <div id="wrapper-airway-age">
+                  Loading...
+                </div>
+                <input class="slider is-fullwidth is-large is-info"
+                       id="airway-age-slider"
+                       step="1" min="0" max=20 value="0" type="range">
+                <center><p class="is-bold">Age: from 0 - 240 months</p></center>
+            </div>
 
-    <center><img src="./static/images/result_quanti_table.png"></center>
-    Quantitative comparison with existing methods on HQSeg-44K and DAVIS. We compare two types of baselines: specialist and
-    generalist models. Our model achieves comparable performance to the specialist baselines but with significantly lower latency; our model
-    achieves comparable performance to the generalist models in terms of latency and segmentation quality despite being trained with much
-    fewer segmentation data. “HQ” denotes the HQSeg-44K dataset; “SA×2” denotes the model has two self-attention blocks for dense fusion. 
+            <div class="column interpolation-video-column">
+                <div id="wrapper-airway-weight">
+                  Loading...
+                </div>
+                <input class="slider is-fullwidth is-large is-info"
+                       id="airway-weight-slider"
+                       step="1" min="0" max=20 value="0" type="range">
+                  <center><p class="is-bold">Weight: from 0 - 160 kgs </p></center>
+            </div>
 
-    <br><br><br>
+            <div class="column interpolation-video-column">
+                <div id="wrapper-airway-sex">
+                  Loading...
+                </div>
+                <input class="slider is-fullwidth is-large is-info"
+                       id="airway-sex-slider"
+                       step="1" min="0" max=20 value="0" type="range">
+                  <center><p class="is-bold">Sex: from F to M</p></center>
+            </div>
 
-    <center><img src="./static/images/result_qualitative.png"></center>
-    Qualitative results with diverse prompts. Left: an example from DAVIS. Right: three examples from HQSeg-44K. The results 
-    are achieved by a user providing all the prompts using our best-performing model.
+        </div>
 
+        <hr>
+        <div class="content has-text-justified">
+          <p>
+            Disentangled Shape Evolution for ADNI Hippocampus.
+          </p>
+        </div>
+        <div class="columns is-vcentered interpolation-panel">
+            <div class="column interpolation-video-column">
+                <div id="wrapper-adni-age">
+                  Loading...
+                </div>
+                <input class="slider is-fullwidth is-large is-info"
+                       id="ADNI-age-slider"
+                       step="1" min="0" max=20 value="0" type="range">
+                <center><p class="is-bold">Age: from 50 - 100 yrs old</p></center>
+            </div>
+
+            <div class="column interpolation-video-column">
+                <div id="wrapper-adni-AD">
+                  Loading...
+                </div>
+                <input class="slider is-fullwidth is-large is-info"
+                       id="ADNI-AD-slider"
+                       step="1" min="0" max=20 value="0" type="range">
+                  <center><p class="is-bold">AD: from health to AD</p></center>
+            </div>
+
+            <div class="column interpolation-video-column">
+                <div id="wrapper-adni-edu">
+                  Loading...
+                </div>
+                <input class="slider is-fullwidth is-large is-info"
+                       id="ADNI-edu-slider"
+                       step="1" min="0" max=20 value="0" type="range">
+                  <center><p class="is-bold">Edu.: from 0 - 30 years</p></center>
+            </div>
+
+            <div class="column interpolation-video-column">
+                <div id="wrapper-adni-sex">
+                  Loading...
+                </div>
+                <input class="slider is-fullwidth is-large is-info"
+                       id="ADNI-sex-slider"
+                       step="1" min="0" max=20 value="0" type="range">
+                  <center><p class="is-bold">Sex</p></center>
+            </div>
+        </div>
+
+        </div>
+    </div>
+</section>
+
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <center><h2 class="title is-3">Shape Extrapolation in Template Space</h2></center>
+  <hr>
+    <center><h3 class="title is-4" >Template Shape Space for <i>Starman</i>.</h3></center>
+    <center><img src="./static/images/starman_shapematrix_template.png" ></center>
+              <hr>
+    <center><h3 class="title is-4">Template Shape Space for ADNI Hippocampus.</h3></center>
+    <center><img src="./static/images/shapematrix_template_adni.png"></center>
+              <hr>
+    <center><h3 class="title is-4">Template Shape Space for Pediatric Airways.</h3></center>
+    <center><img src="./static/images/shapematrix_template_airway.png"></center>
   </div>
 </section>
 
@@ -208,12 +343,15 @@
 <section class="section" id="BibTeX">
   <div class="container is-max-desktop content">
     <h2 class="title">BibTeX</h2>
-    <pre><code>@article{liu2024rethinking,
-  author    = {Liu, Qin and Cho, Jaemin and Bansal, Mohit and Niethammer, Marc},
-  title     = {Rethinking Interactive Image Segmentation with Low Latency, High Quality, and Diverse Prompts},
-  journal   = {CVPR},
-  year      = {2024},
-}</code></pre>
+    <pre><code>@inproceedings{
+jiao2024naisr,
+title={\texttt{NAISR}: A 3D Neural Additive Model for Interpretable Shape Representation},
+author={Yining Jiao and Carlton Jude ZDANSKI and Julia S Kimbell and Andrew Prince and Cameron P Worden and Samuel Kirse and Christopher Rutter and Benjamin Shields and William Alexander Dunn and Jisan Mahmud and Marc Niethammer},
+booktitle={The Twelfth International Conference on Learning Representations},
+year={2024},
+url={https://openreview.net/forum?id=wg8NPfeMF9}
+}
+    </code></pre>
   </div>
 </section>
 

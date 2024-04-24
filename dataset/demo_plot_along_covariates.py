@@ -28,7 +28,7 @@ def plotter_evolution(list_of_shapepath,  savepath, list_text=None, list_colors=
     list_shapes = []
     for i in range(len(list_of_shapepath)):
         a = pv.read(list_of_shapepath[i])
-        a.points /= 60
+        #a.points /= 60
         list_shapes.append(a)
 
     for ith_pred in range(len(list_shapes)):
@@ -63,7 +63,7 @@ def plotter_evolution(list_of_shapepath,  savepath, list_text=None, list_colors=
                        point_size=1)
             p.camera_position = 'yz'
             p.camera.azimuth = -30
-        volume_pred = np.round(list_shapes[ith_pred].volume * 60 * 60 * 60 / 1000, decimals=2)
+        volume_pred = np.round(list_shapes[ith_pred].volume / 1000, decimals=2)
         list_text[ith_pred].update({'est. volume': volume_pred})
 
         p.camera.zoom(0.6)

@@ -382,7 +382,7 @@ class Siren_per_attri(nn.Module):
         x = coords.clone().detach().requires_grad_(True)
         activations['input'] = x
         for i, layer in enumerate(self.net):
-            if isinstance(layer, SineLayer):
+            if isinstance(layer, SineLayer):c
                 x, intermed = layer.forward_with_intermediate(x)
 
                 if retain_grad:
