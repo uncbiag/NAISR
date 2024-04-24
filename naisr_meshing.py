@@ -1148,7 +1148,7 @@ def convert_3d_sdf_samples_to_ply(
     print(numpy_3d_sdf_tensor.max())
     print(numpy_3d_sdf_tensor.min())
     #try:
-    verts, faces, normals, values = measure.marching_cubes_lewiner(
+    verts, faces, normals, values = measure.marching_cubes(
             numpy_3d_sdf_tensor, level=0., spacing=[voxel_size] * 3
         )
 
