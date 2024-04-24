@@ -1,7 +1,8 @@
  {
   "Description" : [ "This experiment learns a shape representation for starman dataset." ],
   "Device":0,
-  "DataSource": {"train": "/home/jyn/NAISR/examples/starman/2dshape_train_with_temp.csv", "test": "/home/jyn/NAISR/examples/starman/2dshape_test_with_temp.csv"},
+  "DataSource": {"train": "examples/starman/2dshape_train_with_temp.csv",
+    "test": "examples/starman/2dshape_test_with_temp.csv"},
   "Split": null,
   "Network" : "DeepNAIGSR",
   "NumEpochs" : 300,
