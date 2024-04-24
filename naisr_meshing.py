@@ -1147,18 +1147,18 @@ def convert_3d_sdf_samples_to_ply(
     ##try:
     print(numpy_3d_sdf_tensor.max())
     print(numpy_3d_sdf_tensor.min())
-    try:
-        verts, faces, normals, values = measure.marching_cubes_lewiner(
-                numpy_3d_sdf_tensor, level=0., spacing=[voxel_size] * 3
-            )
+    #try:
+    verts, faces, normals, values = measure.marching_cubes_lewiner(
+            numpy_3d_sdf_tensor, level=0., spacing=[voxel_size] * 3
+        )
 
-    except:
-        path_aligned_surface = os.path.join(savedir, 'surface.stl')
-        ply_filename_out = os.path.join(savedir, 'surface.ply')
-        surface = pv.PolyData(verts)
-        surface.save(path_aligned_surface)
-        surface.save(ply_filename_out)
-        return verts, faces
+    # except:
+    #     path_aligned_surface = os.path.join(savedir, 'surface.stl')
+    #     ply_filename_out = os.path.join(savedir, 'surface.ply')
+    #     surface = pv.PolyData(verts)
+    #     surface.save(path_aligned_surface)
+    #     surface.save(ply_filename_out)
+    #     return verts, faces
 
     # transform from voxel coordinates to camera coordinates
     # note x and y are flipped in the output of marching_cubes
