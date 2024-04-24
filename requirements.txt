@@ -307,8 +307,6 @@ torch==2.1.0+cu118
 torch-scatter==2.1.2
 torchaudio==2.1.0+cu118
 torchdiffeq==0.2.3
-# Editable install with no version control (torchmeta==1.8.0)
--e /playpen-raid/jyn/NeuralOCT/DIFNet/pytorch-meta
 torchmetrics==0.11.0
 torchvision @ file:///croot/torchvision_1689078161692/work
 tornado @ file:///croot/tornado_1696936946304/work
