@@ -33,7 +33,15 @@ def fix_mesh(pv_shape):
     #pv_shape = fixer.mesh
     return pv_shape
 
-def plotter_evolution_comp(list_of_pred_shapepath, list_of_gt_shapepath, savepath, list_text=None, print_on_figure=False):
+
+def plotter_evolution_comp(shapetype):
+    if shapetype== "Airway":
+        return plotter_airway_evolution_comp
+    elif shapetype== "ADNI":
+        return plotter_adni_evolution_comp
+
+
+def plotter_adni_evolution_comp(list_of_pred_shapepath, list_of_gt_shapepath, savepath, list_text=None, print_on_figure=False):
     # plotting
     # pv.global_theme.background = 'white'
     # Spacing = np.array([1, 1, 1])
@@ -54,7 +62,114 @@ def plotter_evolution_comp(list_of_pred_shapepath, list_of_gt_shapepath, savepat
         list_pred_shapes.append(fix_mesh(pv_pred_shape))
 
         pv_gt_shape = pv.read(list_of_gt_shapepath[i])
-        pv_gt_shape.points /= 60
+        #pv_gt_shape.points /= 60
+        list_gt_shapes.append(fix_mesh(pv_gt_shape))
+
+    for ith_pred in range(len(list_pred_shapes)):
+        p.subplot(0, ith_pred)
+        #pred_coords = list_pred_shapes[ith_pred].points #/60
+        #gt_coords = list_gt_shapes[ith_pred].points  # /60
+
+        p.add_mesh(list_pred_shapes[ith_pred], color='red', point_size=1, opacity=0.3)
+        p.add_mesh(list_gt_shapes[ith_pred], color='blue', point_size=1, opacity=0.3)
+
+        # p.camera_position = 'yz'
+        # p.camera.azimuth = -30
+        p.camera_position = 'xy'
+        p.camera.view_angle = 160.0
+        p.camera.roll = -10
+        p.camera.azimuth = -30
+        p.camera.zoom(4.)
+
+        if list_text is not None:
+            if print_on_figure:
+                print(list_text[ith_pred])
+                p.add_text('age: ' + list_text[ith_pred]['age'] +
+                           '\n weight' + list_text[ith_pred]['weight'],
+                           color='black',
+                           position='upper_edge',
+                           font_size=12,
+                           font='times')
+            else:
+                volume_pred = np.round(list_pred_shapes[ith_pred].volume  / 1000, decimals=2)
+                volume_gt = np.round(list_gt_shapes[ith_pred].volume / 1000, decimals=2)
+                list_text[ith_pred].update({'est. volume': volume_pred})
+                list_text[ith_pred].update({'ori. volume': volume_gt})
+
+
+            #p.add_text('\n', color='black', position='upper_edge')
+            #p.add_text(list_text[ith_pred][1], color='black',  position='upper_edge')
+        #p.camera.zoom(1)
+    #p.export_obj('/home/jyn/NAISR/examples/pediatric_airway/statistics/' + str(filename) + '.obj')
+
+        p.camera.zoom(1.1)
+    p.link_views()
+    p.screenshot(savepath +  '_comp.png')#, window_size=(256*len(list_of_pred_shapepath), 512))
+    p.export_html(savepath + '_comp.html')
+
+    p.close()
+    pd.DataFrame.from_records(list_text).transpose().to_csv(savepath + '_cov_vol.csv')
+    pd.DataFrame.from_records(list_text).transpose().to_latex(savepath + '_cov_vol.txt')
+
+
+    '''
+    '''
+
+    for ith_pred in range(len(list_pred_shapes)):
+
+        pv.start_xvfb()
+        pv.global_theme.background = 'white'
+        p = pv.Plotter(lighting="light_kit", window_size=(300, 400),off_screen=True, border=False)
+        pv.global_theme.background = 'white'
+        pv.global_theme.interactive = True
+        #pv.rcParams['transparent_background'] = True
+
+
+
+        p.add_mesh(list_pred_shapes[ith_pred], color='red', point_size=1, opacity=0.3)
+        p.add_mesh(list_gt_shapes[ith_pred], color='blue', point_size=1, opacity=0.3)
+
+        # p.camera_position = 'yz'
+        # p.camera.azimuth = -30
+        # p.camera.zoom(1.2)
+        p.camera_position = 'xy'
+        p.camera.view_angle = 160.0
+        p.camera.roll = -10
+        p.camera.azimuth = -30
+        p.camera.zoom(4.)
+
+        if ith_pred == 0:
+            cpos = p.camera_position
+        p.camera_position = cpos
+
+        p.screenshot(os.path.join(savepath, str(ith_pred) + '.png'))#, window_size=(256*len(list_of_pred_shapepath), 512))
+        p.export_html(os.path.join(savepath, str(ith_pred) +'.html'))
+        print(os.path.join(savepath, str(ith_pred) + '.png'))
+        p.close()
+
+    return
+def plotter_airway_evolution_comp(list_of_pred_shapepath, list_of_gt_shapepath, savepath, list_text=None, print_on_figure=False):
+    # plotting
+    # pv.global_theme.background = 'white'
+    # Spacing = np.array([1, 1, 1])
+
+
+
+    pv.start_xvfb()
+    pv.global_theme.background = 'white'
+    p = pv.Plotter(lighting="light_kit", shape=(1,len(list_of_pred_shapepath)), off_screen=True, window_size=(300*len(list_of_pred_shapepath), 512), border=False)
+    #pv.rcParams['transparent_background'] = True
+    pv.global_theme.background = 'white'
+    pv.global_theme.interactive = True
+
+    list_pred_shapes = []
+    list_gt_shapes = []
+    for i in range(len(list_of_pred_shapepath)):
+        pv_pred_shape = pv.read(list_of_pred_shapepath[i])
+        list_pred_shapes.append(fix_mesh(pv_pred_shape))
+
+        pv_gt_shape = pv.read(list_of_gt_shapepath[i])
+        #pv_gt_shape.points /= 60
         list_gt_shapes.append(fix_mesh(pv_gt_shape))
 
     for ith_pred in range(len(list_pred_shapes)):
@@ -78,8 +193,8 @@ def plotter_evolution_comp(list_of_pred_shapepath, list_of_gt_shapepath, savepat
                            font_size=12,
                            font='times')
             else:
-                volume_pred = np.round(list_pred_shapes[ith_pred].volume * 60* 60 * 60 / 1000, decimals=2)
-                volume_gt = np.round(list_gt_shapes[ith_pred].volume * 60 * 60 * 60 / 1000, decimals=2)
+                volume_pred = np.round(list_pred_shapes[ith_pred].volume  / 1000, decimals=2)
+                volume_gt = np.round(list_gt_shapes[ith_pred].volume / 1000, decimals=2)
                 list_text[ith_pred].update({'est. volume': volume_pred})
                 list_text[ith_pred].update({'ori. volume': volume_gt})
 
@@ -92,7 +207,7 @@ def plotter_evolution_comp(list_of_pred_shapepath, list_of_gt_shapepath, savepat
         p.camera.zoom(1.1)
     p.link_views()
     p.screenshot(savepath +  '_comp.png')#, window_size=(256*len(list_of_pred_shapepath), 512))
-    p.export_html(savepath + '_comp.html', backend='panel')
+    p.export_html(savepath + '_comp.html')
 
     p.close()
     pd.DataFrame.from_records(list_text).transpose().to_csv(savepath + '_cov_vol.csv')
@@ -125,7 +240,7 @@ def plotter_evolution_comp(list_of_pred_shapepath, list_of_gt_shapepath, savepat
         p.camera_position = cpos
 
         p.screenshot(os.path.join(savepath, str(ith_pred) + '.png'))#, window_size=(256*len(list_of_pred_shapepath), 512))
-        p.export_html(os.path.join(savepath, str(ith_pred) +'.html'), backend='panel')
+        p.export_html(os.path.join(savepath, str(ith_pred) +'.html'))
         print(os.path.join(savepath, str(ith_pred) + '.png'))
         p.close()
 
@@ -180,7 +295,7 @@ def plotter_evolution(list_of_shapepath,  savepath, list_text=None, list_colors=
                        scalars='colors',
                        rgb=True,
                        point_size=1)
-            volume_pred = np.round(list_shapes[ith_pred].volume * 60 * 60 * 60 / 1000, decimals=2)
+            volume_pred = np.round(list_shapes[ith_pred].volume / 1000, decimals=2)
 
             p.add_text('Vol.: ' + str(volume_pred), color='black',
                        position='lower_edge',
@@ -217,7 +332,7 @@ def plotter_evolution(list_of_shapepath,  savepath, list_text=None, list_colors=
                        scalars='colors',
                        rgb=True,
                        point_size=1)
-            volume_pred = np.round(list_shapes[ith_pred].volume * 60 * 60 * 60 / 1000, decimals=2)
+            volume_pred = np.round(list_shapes[ith_pred].volume / 1000, decimals=2)
             p.add_text('Vol.: ' + str(volume_pred), color='black',
                        position='lower_edge',
                        font_size=12,
@@ -241,7 +356,7 @@ def plotter_evolution(list_of_shapepath,  savepath, list_text=None, list_colors=
     #p.export_obj('/home/jyn/NAISR/examples/pediatric_airway/statistics/' + str(filename) + '.obj')
     p.link_views()
     p.screenshot(savepath +  '.png')
-    p.export_html(savepath + '.html', backend='panel')
+    p.export_html(savepath + '.html')
     p.close()
     pd.DataFrame.from_records(list_text).transpose().to_csv(savepath + '_cov_vol_.csv')
     pd.DataFrame.from_records(list_text).transpose().to_latex(savepath + '_cov_vol_.txt')
@@ -251,7 +366,7 @@ def plotter_evolution(list_of_shapepath,  savepath, list_text=None, list_colors=
 
 
 
-def plotter_evolution_for_methods(list_of_shapepath,  savepath, list_text=None):
+def plotter_airway_evolution_for_methods(list_of_shapepath,  savepath, list_text=None):
     # plotting
     # pv.global_theme.background = 'white'
     # Spacing = np.array([1, 1, 1])
@@ -267,30 +382,34 @@ def plotter_evolution_for_methods(list_of_shapepath,  savepath, list_text=None):
     list_shapes = []
     for i in range(len(list_of_shapepath)):
         current_shape = pv.read(list_of_shapepath[i])
-        if i == 0:
-            current_shape.points /= 60
-            #list_of_shapepath[i].append(current_shape)
+
         list_shapes.append(current_shape)
 
 
     for ith_pred0 in range(len(list_shapes)):
         ith_pred = len(list_shapes) - ith_pred0 - 1
         p.subplot(0, ith_pred)
-        '''
-        p.add_mesh(list_shapes[ith_pred],
-                   scalars=list_shapes[ith_pred].points[:, -1],
-                   colormap='twilight',
-                   point_size=1,
-                   show_scalar_bar=False,)
-        '''
-        a = list_shapes[ith_pred].points.copy()
-        a[:, 0] = (a[:, 0] - a[:, 0].min())/(a[:,0].max() - a[:, 0].min())
-        a[:, 1] = (a[:, 1] - a[:, 1].min()) / (a[:, 1].max() - a[:, 1].min())
-        a[:, 2] = (a[:, 2] - a[:, 2].min()) / (a[:, 2].max() - a[:, 2].min())
-        a = a * 0.6 + 0.4
-        a *= 255
-        a =a.astype('uint8')
-        list_shapes[ith_pred].field_data['colors'] = a#pv.ColorLike(list_shapes[ith_pred].points)
+
+        list_shapes[ith_pred].compute_normals(inplace=True)
+        a = list_shapes[ith_pred].point_normals.copy() #.points.copy()
+        if ith_pred == 0:
+            a *= (-1)
+
+        b = np.zeros_like(a)
+        a[:, 0] =  (a[:, 0] - a[:, 0].min()) / (a[:, 0].max() - a[:, 0].min())
+        a[:, 1] = 1-(a[:, 1] - a[:, 1].min()) / (a[:, 1].max() - a[:, 1].min())
+        a[:, 2] = 1-(a[:, 2] - a[:, 2].min()) / (a[:, 2].max() - a[:, 2].min())
+        a[:, 0] = np.round((0.3 * a[:, 0] + 0.7) * 255)
+        a[:, 1] = np.round((0.3 * a[:, 1] + 0.7) * 255)
+        a[:, 2] = np.round((0.3 * a[:, 2] + 0.7) * 255)
+        b[:, 0] = a[:, 2]
+        b[:, 1] = a[:, 1]
+        b[:, 2] = a[:, 0]
+        # a[:, 0] = np.round((0.5 * a[:, 0] + 0.5) * 255)
+        # a[:, 1] = np.round((0.5 * a[:, 1] + 0.5) * 255)
+        # a[:, 2] = np.round((0.5 * a[:, 2] + 0.5) * 255)
+        #a = 225 - a
+        list_shapes[ith_pred].field_data['colors'] = b.astype('int') #a.astype('int')
         p.add_mesh(list_shapes[ith_pred],
                    scalars='colors',
                     rgb=True,
@@ -303,11 +422,9 @@ def plotter_evolution_for_methods(list_of_shapepath,  savepath, list_text=None):
             p.add_text(str(list_text[ith_pred]), color='black',position='lower_edge', font_size=12, font='times')
 
 
-        #p.camera.zoom(1)
-    #p.export_obj('/home/jyn/NAISR/examples/pediatric_airway/statistics/' + str(filename) + '.obj')
     p.link_views()
     p.screenshot(savepath +  '.png')
-    p.export_html(savepath + '.html', backend='panel')
+    p.export_html(savepath + '.html')
     p.close()
 
 
@@ -322,21 +439,24 @@ def plotter_evolution_for_methods(list_of_shapepath,  savepath, list_text=None):
         pv.rcParams['transparent_background'] = True
 
         ith_pred = len(list_shapes) - ith_pred0 - 1
-        '''
-        p.add_mesh(list_shapes[ith_pred],
-                   scalars=list_shapes[ith_pred].points[:, -1],
-                   colormap='twilight',
-                   point_size=1,
-                   show_scalar_bar=False,)
-        '''
-        a = list_shapes[ith_pred].points.copy()
-        a[:, 0] = (a[:, 0] - a[:, 0].min())/(a[:,0].max() - a[:, 0].min())
-        a[:, 1] = (a[:, 1] - a[:, 1].min()) / (a[:, 1].max() - a[:, 1].min())
-        a[:, 2] = (a[:, 2] - a[:, 2].min()) / (a[:, 2].max() - a[:, 2].min())
-        a = a * 0.6 + 0.4
-        a *= 255
-        a =a.astype('uint8')
-        list_shapes[ith_pred].field_data['colors'] = a#pv.ColorLike(list_shapes[ith_pred].points)
+
+        if ith_pred == 0:
+            a *= (-1)
+        a = list_shapes[ith_pred].point_normals.copy()
+        b = np.zeros_like(a)
+        a[:, 0] =  (a[:, 0] - a[:, 0].min()) / (a[:, 0].max() - a[:, 0].min())
+        a[:, 1] = 1-(a[:, 1] - a[:, 1].min()) / (a[:, 1].max() - a[:, 1].min())
+        a[:, 2] = 1-(a[:, 2] - a[:, 2].min()) / (a[:, 2].max() - a[:, 2].min())
+        a[:, 0] = np.round((0.3 * a[:, 0] + 0.7) * 255)
+        a[:, 1] = np.round((0.3 * a[:, 1] + 0.7) * 255)
+        a[:, 2] = np.round((0.3 * a[:, 2] + 0.7) * 255)
+        b[:, 0] = a[:, 2]
+        b[:, 1] = a[:, 1]
+        b[:, 2] = a[:, 0]
+
+        #a = 225 - a
+        list_shapes[ith_pred].field_data['colors'] = b.astype('int') #a.astype('int')
+
         p.add_mesh(list_shapes[ith_pred],
                    scalars='colors',
                     rgb=True,
@@ -348,13 +468,10 @@ def plotter_evolution_for_methods(list_of_shapepath,  savepath, list_text=None):
             cpos = p.camera_position
         p.camera_position = cpos
 
-        #if list_text is not None:
-        #    p.add_text(str(list_text[ith_pred]), color='black',position='lower_edge', font_size=12, font='times')
-
         cond_mkdir(savepath)
         name = list_text[ith_pred].replace('/', '-')
         p.screenshot(os.path.join(savepath, name + 'yz.png'))
-        p.export_html(os.path.join(savepath, str(name)+ 'yz.html'), backend='panel')
+        p.export_html(os.path.join(savepath, str(name)+ 'yz.html'))
 
         p.close()
 
@@ -368,21 +485,26 @@ def plotter_evolution_for_methods(list_of_shapepath,  savepath, list_text=None):
         pv.rcParams['transparent_background'] = True
 
         ith_pred = len(list_shapes) - ith_pred0 - 1
-        '''
-        p.add_mesh(list_shapes[ith_pred],
-                   scalars=list_shapes[ith_pred].points[:, -1],
-                   colormap='twilight',
-                   point_size=1,
-                   show_scalar_bar=False,)
-        '''
-        a = list_shapes[ith_pred].points.copy()
-        a[:, 0] = (a[:, 0] - a[:, 0].min()) / (a[:, 0].max() - a[:, 0].min())
-        a[:, 1] = (a[:, 1] - a[:, 1].min()) / (a[:, 1].max() - a[:, 1].min())
-        a[:, 2] = (a[:, 2] - a[:, 2].min()) / (a[:, 2].max() - a[:, 2].min())
-        a = a * 0.6 + 0.4
-        a *= 255
-        a = a.astype('uint8')
-        list_shapes[ith_pred].field_data['colors'] = a  # pv.ColorLike(list_shapes[ith_pred].points)
+
+
+        a = list_shapes[ith_pred].point_normals.copy()
+        if ith_pred == 0:
+            a *= (-1)
+        b = np.zeros_like(a)
+        a[:, 0] =  (a[:, 0] - a[:, 0].min()) / (a[:, 0].max() - a[:, 0].min())
+        a[:, 1] = 1-(a[:, 1] - a[:, 1].min()) / (a[:, 1].max() - a[:, 1].min())
+        a[:, 2] = 1-(a[:, 2] - a[:, 2].min()) / (a[:, 2].max() - a[:, 2].min())
+        a[:, 0] = np.round((0.3 * a[:, 0] + 0.7) * 255)
+        a[:, 1] = np.round((0.3 * a[:, 1] + 0.7) * 255)
+        a[:, 2] = np.round((0.3 * a[:, 2] + 0.7) * 255)
+        b[:, 0] = a[:, 2]
+        b[:, 1] = a[:, 1]
+        b[:, 2] = a[:, 0]
+        # a[:, 0] = np.round((0.5 * a[:, 0] + 0.5) * 255)
+        # a[:, 1] = np.round((0.5 * a[:, 1] + 0.5) * 255)
+        # a[:, 2] = np.round((0.5 * a[:, 2] + 0.5) * 255)
+        #a = 225 - a
+        list_shapes[ith_pred].field_data['colors'] = b.astype('int') #a.astype('int')
         p.add_mesh(list_shapes[ith_pred],
                    scalars='colors',
                    rgb=True,
@@ -399,7 +521,174 @@ def plotter_evolution_for_methods(list_of_shapepath,  savepath, list_text=None):
         cond_mkdir(savepath)
         name = list_text[ith_pred].replace('/', '-')
         p.screenshot(os.path.join(savepath, name + 'xz.png'))
-        p.export_html(os.path.join(savepath, str(name) + 'xz.html'), backend='panel')
+        p.export_html(os.path.join(savepath, str(name) + 'xz.html'))
+        p.close()
+
+    return
+
+
+
+
+def plotter_adni_evolution_for_methods(list_of_shapepath,  savepath, list_text=None):
+    # plotting
+    # pv.global_theme.background = 'white'
+    # Spacing = np.array([1, 1, 1])
+
+    pv.start_xvfb()
+    pv.global_theme.background = 'white'
+    p = pv.Plotter(lighting="light_kit", shape=(1,len(list_of_shapepath)), off_screen=True, window_size=(330*len(list_of_shapepath), 512), border=False)
+    pv.global_theme.background ='white'
+    pv.global_theme.interactive = True
+    pv.rcParams['transparent_background'] = True
+    print(list_of_shapepath)
+
+    list_shapes = []
+    for i in range(len(list_of_shapepath)):
+        current_shape = pv.read(list_of_shapepath[i])
+
+        list_shapes.append(current_shape)
+
+
+    for ith_pred0 in range(len(list_shapes)):
+        ith_pred = len(list_shapes) - ith_pred0 - 1
+        p.subplot(0, ith_pred)
+
+        list_shapes[ith_pred].compute_normals(inplace=True)
+        a = list_shapes[ith_pred].point_normals.copy() #.points.copy()
+        if ith_pred == 0:
+            a *= (-1)
+
+        b = np.zeros_like(a)
+        a[:, 0] = (a[:, 0] - a[:, 0].min()) / (a[:, 0].max() - a[:, 0].min())
+        a[:, 1] = (a[:, 1] - a[:, 1].min()) / (a[:, 1].max() - a[:, 1].min())
+        a[:, 2] = (a[:, 2] - a[:, 2].min()) / (a[:, 2].max() - a[:, 2].min())
+        a[:, 0] = np.round((0.4 * a[:, 0] + 0.6) * 255)
+        a[:, 1] = np.round((0.4 * a[:, 1] + 0.6) * 255)
+        a[:, 2] = np.round((0.4 * a[:, 2] + 0.6) * 255)
+        b = a
+        # b[:, 0] = a[:, 2]
+        # b[:, 1] = a[:, 1]
+        # b[:, 2] = a[:, 0]
+
+
+
+        list_shapes[ith_pred].field_data['colors'] = b.astype('int') #a.astype('int')
+        p.add_mesh(list_shapes[ith_pred],
+                   scalars='colors',
+                    rgb=True,
+                   point_size=1)
+        p.camera_position = 'xy'
+        p.camera.view_angle = 160.0
+        p.camera.roll = -10
+        p.camera.azimuth = -30
+        p.camera.zoom(4.)
+
+        if list_text is not None:
+            p.add_text(str(list_text[ith_pred]), color='black',position='lower_edge', font_size=12, font='times')
+
+
+    p.link_views()
+    p.screenshot(savepath +  '.png')
+    p.export_html(savepath + '.html')
+    p.close()
+
+
+
+    # plot individual figures
+    for ith_pred0 in range(len(list_shapes)):
+        pv.start_xvfb()
+        pv.global_theme.background = 'white'
+        p = pv.Plotter(lighting="light_kit", off_screen=True, window_size=(512, 512), border=False)
+        pv.global_theme.background = 'white'
+        pv.global_theme.interactive = True
+        pv.rcParams['transparent_background'] = True
+
+        ith_pred = len(list_shapes) - ith_pred0 - 1
+
+        if ith_pred == 0:
+            a *= (-1)
+        a = list_shapes[ith_pred].point_normals.copy()
+        b = np.zeros_like(a)
+        a[:, 0] = (a[:, 0] - a[:, 0].min()) / (a[:, 0].max() - a[:, 0].min())
+        a[:, 1] = (a[:, 1] - a[:, 1].min()) / (a[:, 1].max() - a[:, 1].min())
+        a[:, 2] = (a[:, 2] - a[:, 2].min()) / (a[:, 2].max() - a[:, 2].min())
+        a[:, 0] = np.round((0.4 * a[:, 0] + 0.6) * 255)
+        a[:, 1] = np.round((0.4 * a[:, 1] + 0.6) * 255)
+        a[:, 2] = np.round((0.4 * a[:, 2] + 0.6) * 255)
+        b = a
+        # b[:, 0] = a[:, 2]
+        # b[:, 1] = a[:, 1]
+        # b[:, 2] = a[:, 0]
+
+        list_shapes[ith_pred].field_data['colors'] = b.astype('int') #a.astype('int')
+
+        p.add_mesh(list_shapes[ith_pred],
+                   scalars='colors',
+                    rgb=True,
+                   point_size=1)
+        p.camera_position = 'xy'
+        p.camera.view_angle = 160.0
+        p.camera.roll = -10
+        #p.camera.azimuth = 150
+        p.camera.azimuth = -30
+        p.camera.zoom(4.)
+
+        if ith_pred0 == 0:
+            cpos = p.camera_position
+        p.camera_position = cpos
+
+        cond_mkdir(savepath)
+        name = list_text[ith_pred].replace('/', '-')
+        p.screenshot(os.path.join(savepath, name + 'xy.png'))
+        p.export_html(os.path.join(savepath, str(name)+ 'xy.html'))
+
+        p.close()
+
+    # plot individual figures
+    for ith_pred0 in range(len(list_shapes)):
+        pv.start_xvfb()
+        pv.global_theme.background = 'white'
+        p = pv.Plotter(lighting="light_kit", off_screen=True, window_size=(512, 512), border=False)
+        pv.global_theme.background = 'white'
+        pv.global_theme.interactive = True
+        pv.rcParams['transparent_background'] = True
+
+        ith_pred = len(list_shapes) - ith_pred0 - 1
+
+        a = list_shapes[ith_pred].point_normals.copy()
+        if ith_pred == 0:
+            a *= (-1)
+        b = np.zeros_like(a)
+        a[:, 0] = (a[:, 0] - a[:, 0].min()) / (a[:, 0].max() - a[:, 0].min())
+        a[:, 1] = (a[:, 1] - a[:, 1].min()) / (a[:, 1].max() - a[:, 1].min())
+        a[:, 2] = (a[:, 2] - a[:, 2].min()) / (a[:, 2].max() - a[:, 2].min())
+        a[:, 0] = np.round((0.4 * a[:, 0] + 0.6) * 255)
+        a[:, 1] = np.round((0.4 * a[:, 1] + 0.6) * 255)
+        a[:, 2] = np.round((0.4 * a[:, 2] + 0.6) * 255)
+        # b[:, 0] = a[:, 2]
+        # b[:, 1] = a[:, 1]
+        # b[:, 2] = a[:, 0]
+        b = a
+
+        list_shapes[ith_pred].field_data['colors'] = b.astype('int') #a.astype('int')
+        p.add_mesh(list_shapes[ith_pred],
+                   scalars='colors',
+                   rgb=True,
+                   point_size=1)
+        p.camera_position = 'xy'
+        p.camera.view_angle = 160.0
+        p.camera.roll = -10
+        p.camera.azimuth = 150
+        p.camera.zoom(4.)
+
+        if ith_pred0 == 0:
+            cpos = p.camera_position
+        p.camera_position = cpos
+
+        cond_mkdir(savepath)
+        name = list_text[ith_pred].replace('/', '-')
+        p.screenshot(os.path.join(savepath, name + 'yx.png'))
+        p.export_html(os.path.join(savepath, str(name) + 'yx..html'))
         p.close()
 
     return
@@ -411,8 +700,6 @@ def visualize_a_case(savepath_specifc, path_to_show, colormap='twilight', colors
     #if pv_shape.volume < 1000:
     if normalize:
         pv_shape.points *= 60
-
-
 
     pv.start_xvfb()
     pv.global_theme.background = 'white'
@@ -442,7 +729,7 @@ def visualize_a_case(savepath_specifc, path_to_show, colormap='twilight', colors
         p.camera.azimuth = -30
         p.camera.zoom(1.4)
         p.screenshot(savepath_specifc + '.png')
-        p.export_html(savepath_specifc + '.html', backend='panel')
+        p.export_html(savepath_specifc + '.html')
         p.close()
     else:
         if colormap == 'twilight':
@@ -481,19 +768,260 @@ def visualize_a_case(savepath_specifc, path_to_show, colormap='twilight', colors
             p.camera.zoom(1.4)
 
         p.screenshot(savepath_specifc + '.png')
-        p.export_html(savepath_specifc + '.html', backend='panel')
+        p.export_html(savepath_specifc + '.html')
         p.close()
     return
 
-def plotter_evolution_shapematrix(dict_of_shapepath,  savepath, dict_text0, dict_colors0):
+
+def plotter_evolution_shapematrix(shapetype):
+    if shapetype == 'Airway':
+        return plotter_evolution_shapematrix_airway
+    elif shapetype == "ADNI":
+        return plotter_evolution_shapematrix_adni
+    elif shapetype == 'starman':
+        return plotter_evolution_shapematrix_starman
+    else:
+        print("Incorrect shapetype for plotting shapematrix")
+        return
+
+def plotter_evolution_shapematrix_starman(dict_of_shapepath,  savepath, dict_text0, dict_colors0):
+    # plotting
+    # pv.global_theme.background = 'white'
+    # Spacing = np.array([1, 1, 1])
+    #dict_text = dict_text0#.copy()
+    dict_text = None
+    pv.start_xvfb()
+    # pv.global_theme.background = 'white'
+    pv.rcParams['transparent_background'] = True
+    num_of_x = len(dict_of_shapepath.keys())
+    num_of_y = len(dict_of_shapepath[list(dict_of_shapepath.keys())[0]].keys())
+    p = pv.Plotter(lighting="light_kit",
+                   shape=(num_of_y, num_of_x),
+                   window_size=(num_of_x * 256, num_of_y * 256),
+                   off_screen=True,
+                   border=False)
+
+    pv.global_theme.background = 'white'
+    pv.global_theme.interactive = True
+
+    dict_shapes_pred = {}
+    dict_shapes_gt = {}
+    list_of_i = sorted(list(dict_of_shapepath.keys()))
+    list_of_j = {}
+    for i, dict_subset in dict_of_shapepath.items():
+        dict_shapes_pred[i] = {}
+        dict_shapes_gt[i] = {}
+        list_of_j[i] = list(
+            reversed(sorted(list(dict_of_shapepath[i].keys()))))  # sorted(list(dict_of_shapepath[i].keys()))
+        for j, path in dict_subset.items():
+            dict_shapes_pred[i][j] = pv.read(dict_of_shapepath[i][j]['path_pred'])
+            if 'path_gt' in list(dict_of_shapepath[i][j].keys()):
+                dict_shapes_gt[i][j] = pv.read(dict_of_shapepath[i][j]['path_gt'])
+
+    for ith_i_idx in range(len(list_of_i)):
+        i = list_of_i[ith_i_idx]
+        for ith_j_idx in range(len(list_of_j[i])):
+            j = list_of_j[i][ith_j_idx]
+            p.subplot(ith_j_idx, ith_i_idx, )
+
+            p.add_mesh(dict_shapes_pred[i][j], color='red',line_width=3)
+            p.add_mesh(dict_shapes_gt[i][j], color='blue',line_width=3)
+
+            p.camera_position = 'xy'
+            p.camera.azimuth = -30
+
+            p.camera.zoom(1.35)
+
+            if dict_text is not None:
+                volume_pred = np.round(dict_shapes_pred[i][j].volume * 10 * 10 * 10 / 1000, decimals=2)
+                dict_text[i][j].update({'Vol.': volume_pred})
+                current_text = ''
+                for name, value in dict_text[i][j].items():
+                    if name == 'Vol.':
+                        current_text += name + ': ' + str(value) + '\n'
+                    p.add_text(current_text, color='black',
+                               position='lower_left',
+                               font_size=15,
+                               font='times')
+
+    p.link_views()
+    p.screenshot(savepath + 'shapemat.png')
+    p.export_html(savepath + 'shappemat.html')
+    p.close()
+    # pd.DataFrame.from_records(list_text).transpose().to_csv(savepath + '_cov_vol_.csv')
+
+    return
+
+def plotter_evolution_shapematrix_adni(dict_of_shapepath,  savepath, dict_text0, dict_colors0):
     # plotting
     # pv.global_theme.background = 'white'
     # Spacing = np.array([1, 1, 1])
     dict_text = dict_text0.copy()
 
     pv.start_xvfb()
+    # pv.global_theme.background = 'white'
+    #pv.rcParams['transparent_background'] = True
+    num_of_x = len(dict_of_shapepath.keys())
+    num_of_y = len(dict_of_shapepath[list(dict_of_shapepath.keys())[0]].keys())
+    p = pv.Plotter(lighting="light_kit",
+                   shape=(num_of_y, num_of_x),
+                   window_size=(num_of_x * 256, num_of_y * 256),
+                   off_screen=True,
+                   border=False)
+
+    pv.global_theme.background = 'white'
+    pv.global_theme.interactive = True
+
+    dict_shapes = {}
+    list_of_i = sorted(list(dict_of_shapepath.keys()))
+    list_of_j = {}
+    for i, dict_subset in dict_of_shapepath.items():
+        dict_shapes[i] = {}
+        list_of_j[i] = list(
+            reversed(sorted(list(dict_of_shapepath[i].keys()))))  # sorted(list(dict_of_shapepath[i].keys()))
+        for j, path in dict_subset.items():
+            dict_shapes[i][j] = pv.read(dict_of_shapepath[i][j]['path_pred'])
+
+    for ith_i_idx in range(len(list_of_i)):
+        i = list_of_i[ith_i_idx]
+        for ith_j_idx in range(len(list_of_j[i])):
+            j = list_of_j[i][ith_j_idx]
+            p.subplot(ith_j_idx, ith_i_idx, )
+
+            if dict_colors0 is not None:
+                dict_colors = dict_colors0.copy()
+                # current_color = Spherical_np(np.array(dict_colors[i][j]))
+                # colors = (current_color  / np.array([[2.6, 3.2, 3.2]]) * 255).astype('uint8')
+
+                # a = dict_colors[i][j]
+                # a[:, 0] = (a[:, 0] - a[:, 0].min()) / (a[:, 0].max() - a[:, 0].min())
+                # a[:, 1] = (a[:, 1] - a[:, 1].min()) / (a[:, 1].max() - a[:, 1].min())
+                # a[:, 2] = (a[:, 2] - a[:, 2].min()) / (a[:, 2].max() - a[:, 2].min())
+                # a = a * 0.6 + 0.4
+                # a *= 255
+                # dict_shapes[i][j].field_data['colors'] = a.astype('uint8')
+                dict_shapes[i][j].compute_normals(inplace=True)
+                a = dict_shapes[i][j].point_normals.copy()  # .points.copy()
+                a[:, 0] = (a[:, 0] - a[:, 0].min()) / (a[:, 0].max() - a[:, 0].min())
+                a[:, 1] =  (a[:, 1] - a[:, 1].min()) / (a[:, 1].max() - a[:, 1].min())
+                a[:, 2] =  (a[:, 2] - a[:, 2].min()) / (a[:, 2].max() - a[:, 2].min())
+                a[:, 0] = np.round((0.4 * a[:, 0] + 0.6) * 255)
+                a[:, 1] = np.round((0.4 * a[:, 1] + 0.6) * 255)
+                a[:, 2] = np.round((0.4 * a[:, 2] + 0.6) * 255)
+
+                dict_shapes[i][j].field_data['colors'] = a.astype('int')
+                p.add_mesh(dict_shapes[i][j],
+                           scalars='colors',
+                           rgb=True,
+                           point_size=1)
+                p.camera_position = 'xy'
+                p.camera.view_angle = 160.0
+                p.camera.roll = -10
+                p.camera.azimuth = -30
+                p.camera.zoom(4.)
+            else:
+                # current_color = Spherical_np(np.array(dict_shapes[i][j].points))
+                # colors = (current_color / np.array([[4., 3.2, 3.2]]) * 255).astype('uint8')
+                # dict_shapes[i][j]
+                # dict_shapes[i][j].field_data['colors'] = colors
+                # p.add_mesh(dict_shapes[i][j],
+                #           scalars='colors',
+                #           rgb=True,
+                #           point_size=1)
+
+                # a = dict_shapes[i][j].copy().points
+                # a[:, 0] = (a[:, 0] - a[:, 0].min()) / (a[:, 0].max() - a[:, 0].min())
+                # a[:, 1] = (a[:, 1] - a[:, 1].min()) / (a[:, 1].max() - a[:, 1].min())
+                # a[:, 2] = (a[:, 2] - a[:, 2].min()) / (a[:, 2].max() - a[:, 2].min())
+                # a = a * 0.7 + 0.3
+                # a *= 255
+                # dict_shapes[i][j].field_data['colors'] = a.astype('uint8')
+                dict_shapes[i][j].compute_normals(inplace=True)
+                a = dict_shapes[i][j].point_normals.copy()  # .points.copy()
+                b = np.zeros_like(a)
+                a[:, 0] = (a[:, 0] - a[:, 0].min()) / (a[:, 0].max() - a[:, 0].min())
+                a[:, 1] =  (a[:, 1] - a[:, 1].min()) / (a[:, 1].max() - a[:, 1].min())
+                a[:, 2] =  (a[:, 2] - a[:, 2].min()) / (a[:, 2].max() - a[:, 2].min())
+                a[:, 0] = np.round((0.3 * a[:, 0] + 0.7) * 255)
+                a[:, 1] = np.round((0.3 * a[:, 1] + 0.7) * 255)
+                a[:, 2] = np.round((0.3 * a[:, 2] + 0.7) * 255)
+                b[:, 0] = a[:, 0]
+                b[:, 1] = a[:, 1]
+                b[:, 2] = a[:, 2]
+                dict_shapes[i][j].point_data['colors'] = b.astype('uint8')
+                p.add_mesh(dict_shapes[i][j],
+                           scalars='colors',
+                           rgb=True,
+                           point_size=1)
+                p.camera_position = 'xy'
+                p.camera.view_angle = 160.0
+                p.camera.roll = -10
+                p.camera.azimuth = -30
+
+                #p.camera.azimuth = -30
+                '''
+                p.add_mesh(dict_shapes[i][j],
+                           scalars=dict_shapes[i][j].points[:,2],
+                           colormap='twilight',
+                           point_size=1,
+                           show_scalar_bar=False,)
+                p.camera_position = 'yz'
+                p.camera.azimuth = -30
+
+                a = dict_shapes[i][j].points.copy()
+                a[:, 0] = (a[:, 0] - a[:, 0].min()) / (a[:, 0].max() - a[:, 0].min())
+                a[:, 1] = (a[:, 1] - a[:, 1].min()) / (a[:, 1].max() - a[:, 1].min())
+                a[:, 2] = (a[:, 2] - a[:, 2].min()) / (a[:, 2].max() - a[:, 2].min())
+                a *= 255
+                a = a.astype('uint8')
+                dict_shapes[i][j].field_data['colors'] = a  # pv.ColorLike(list_shapes[ith_pred].points)
+                p.add_mesh(dict_shapes[i][j],
+                           scalars='colors',
+                           rgb=True,
+                           point_size=1)
+                '''
+
+            volume_pred = np.round(dict_shapes[i][j].volume  / 1000, decimals=2)
+            dict_text[i][j].update({'Vol.': volume_pred})
+            # dict_text[i][j]['age'] = (230 - 3.) * dict_text[i][j]['age'].detach().cpu().numpy()[0] + 3.
+            # dict_text[i][j]['weight'] = (150.0 - 6.75) * dict_text[i][j]['weight'].detach().cpu().numpy()[0]  + 6.75
+
+            p.camera.zoom(4.)
+
+            if dict_text is not None:
+                current_text = ''
+                for name, value in dict_text[i][j].items():
+                    if name == 'Vol.':
+                        current_text += name + ': ' + str(value) + '\n'
+                    p.add_text(current_text, color='black',
+                               position='upper_left',
+                               font_size=15,
+                               font='times')
+            # p.add_text(str(np.round(i, 1)) + ', ' + str(np.round(j, 1)), color='black',
+            #           position='lower_left',
+            #            font_size=15,
+            #           font='times')
+        # p.camera.zoom(1)
+    # p.export_obj('/home/jyn/NAISR/examples/pediatri c_airway/statistics/' + str(filename) + '.obj')
+    p.link_views()
+    p.screenshot(savepath + 'shapemat.png',transparent_background=True)
+    p.export_html(savepath + 'shappemat.html')
+    p.close()
+    # pd.DataFrame.from_records(list_text).transpose().to_csv(savepath + '_cov_vol_.csv')
+
+    return
+
+
+
+def plotter_evolution_shapematrix_airway(dict_of_shapepath,  savepath, dict_text0, dict_colors0):
+    # plotting
+    # pv.global_theme.background = 'white'
+    # Spacing = np.array([1, 1, 1])
+    dict_text = dict_text0.copy()
+
+    #pv.start_xvfb()
     #pv.global_theme.background = 'white'
-    pv.rcParams['transparent_background'] = True
+    #pv.rcParams['transparent_background'] = True
     num_of_x = len(dict_of_shapepath.keys())
     num_of_y = len(dict_of_shapepath[list(dict_of_shapepath.keys())[0]].keys())
     p = pv.Plotter(lighting="light_kit",
@@ -514,7 +1042,8 @@ def plotter_evolution_shapematrix(dict_of_shapepath,  savepath, dict_text0, dict
         dict_shapes[i] = {}
         list_of_j[i] = list(reversed(sorted(list(dict_of_shapepath[i].keys())))) #sorted(list(dict_of_shapepath[i].keys()))
         for j, path in dict_subset.items():
-            dict_shapes[i][j] = pv.read(dict_of_shapepath[i][j])
+
+            dict_shapes[i][j] = pv.read(dict_of_shapepath[i][j]['path_pred'])
 
 
     for ith_i_idx in range(len(list_of_i)):
@@ -528,18 +1057,41 @@ def plotter_evolution_shapematrix(dict_of_shapepath,  savepath, dict_text0, dict
                 #current_color = Spherical_np(np.array(dict_colors[i][j]))
                 #colors = (current_color  / np.array([[2.6, 3.2, 3.2]]) * 255).astype('uint8')
 
-                a = dict_colors[i][j]
+                #dict_colors[i][j] = dict_colors[i][j].cpu().detach().numpy()
+                # a = dict_colors[i][j].copy()
+                # a[:, 0] = (a[:, 0] - a[:, 0].min()) / (a[:, 0].max() - a[:, 0].min())
+                # a[:, 1] = (a[:, 1] - a[:, 1].min()) / (a[:, 1].max() - a[:, 1].min())
+                # a[:, 2] = (a[:, 2] - a[:, 2].min()) / (a[:, 2].max() - a[:, 2].min())
+                #
+                # a[:, 0] = np.round((0.4 * (1-a[:, 0]) + 0.6)*255)
+                # a[:, 1] = np.round((0.4 * (1-a[:, 1]) + 0.6)*255)
+                # a[:, 2] = np.round((0.4 * (1-a[:, 2]) + 0.6)*255)
+                dict_shapes[i][j].compute_normals(inplace=True)
+                a = dict_shapes[i][j].point_normals.copy()  # .points.copy()
+                b = np.zeros_like(a)
                 a[:, 0] = (a[:, 0] - a[:, 0].min()) / (a[:, 0].max() - a[:, 0].min())
-                a[:, 1] = (a[:, 1] - a[:, 1].min()) / (a[:, 1].max() - a[:, 1].min())
-                a[:, 2] = (a[:, 2] - a[:, 2].min()) / (a[:, 2].max() - a[:, 2].min())
-                a = a * 0.6 + 0.4
-                a *= 255
+                a[:, 1] = 1 - (a[:, 1] - a[:, 1].min()) / (a[:, 1].max() - a[:, 1].min())
+                a[:, 2] = 1 - (a[:, 2] - a[:, 2].min()) / (a[:, 2].max() - a[:, 2].min())
+                a[:, 0] = np.round((0.3 * a[:, 0] + 0.7) * 255)
+                a[:, 1] = np.round((0.3 * a[:, 1] + 0.7) * 255)
+                a[:, 2] = np.round((0.3 * a[:, 2] + 0.7) * 255)
+                b[:, 0] = a[:, 2]
+                b[:, 1] = a[:, 1]
+                b[:, 2] = a[:, 0]
+                # a[:, 0] = np.round((0.5 * a[:, 0] + 0.5) * 255)
+                # a[:, 1] = np.round((0.5 * a[:, 1] + 0.5) * 255)
+                # a[:, 2] = np.round((0.5 * a[:, 2] + 0.5) * 255)
+                # a = 225 - a
+                dict_shapes[i][j].field_data['colors'] = b.astype('int')  # a.astype('int')
 
-                dict_shapes[i][j].field_data['colors'] = a.astype('uint8')
-                p.add_mesh(dict_shapes[i][j],
-                           scalars='colors',
-                           rgb=True,
-                           point_size=1)
+                #dict_shapes[i][j].field_data['colors'] = a.astype('uint8')
+                try:
+                    p.add_mesh(dict_shapes[i][j],
+                               scalars='colors',
+                               rgb=True,
+                               point_size=1)
+                except:
+                    print('1')
                 p.camera_position = 'yz'
                 p.camera.azimuth = -30
             else:
@@ -552,17 +1104,36 @@ def plotter_evolution_shapematrix(dict_of_shapepath,  savepath, dict_text0, dict
                 #           rgb=True,
                 #           point_size=1)
 
-                a = dict_shapes[i][j].copy().points
-                a[:, 0] = (a[:, 0] - a[:, 0].min()) / (a[:, 0].max() - a[:, 0].min())
-                a[:, 1] = (a[:, 1] - a[:, 1].min()) / (a[:, 1].max() - a[:, 1].min())
-                a[:, 2] = (a[:, 2] - a[:, 2].min()) / (a[:, 2].max() - a[:, 2].min())
-                a = a * 0.7 + 0.3
-                a *= 255
-                dict_shapes[i][j].field_data['colors'] = a.astype('uint8')
-                p.add_mesh(dict_shapes[i][j],
-                           scalars='colors',
-                           rgb=True,
-                           point_size=1)
+                # a = dict_shapes[i][j].copy().points
+                # a[:, 0] = (a[:, 0] - a[:, 0].min()) / (a[:, 0].max() - a[:, 0].min())
+                # a[:, 1] = (a[:, 1] - a[:, 1].min()) / (a[:, 1].max() - a[:, 1].min())
+                # a[:, 2] = (a[:, 2] - a[:, 2].min()) / (a[:, 2].max() - a[:, 2].min())
+                # a = a * 0.7 + 0.3
+                # a *= 255
+                try:
+                    dict_shapes[i][j].compute_normals(inplace=True)
+                    a = dict_shapes[i][j].point_normals.copy()  # .points.copy()
+                    b = np.zeros_like(a)
+                    a[:, 0] = (a[:, 0] - a[:, 0].min()) / (a[:, 0].max() - a[:, 0].min())
+                    a[:, 1] =  (a[:, 1] - a[:, 1].min()) / (a[:, 1].max() - a[:, 1].min())
+                    a[:, 2] =  (a[:, 2] - a[:, 2].min()) / (a[:, 2].max() - a[:, 2].min())
+                    a[:, 0] = np.round((0.3 * a[:, 0] + 0.7) * 255)
+                    a[:, 1] = np.round((0.3 * a[:, 1] + 0.7) * 255)
+                    a[:, 2] = np.round((0.3 * a[:, 2] + 0.7) * 255)
+                    b[:, 0] = a[:, 2]
+                    b[:, 1] = a[:, 1]
+                    b[:, 2] = a[:, 0]
+
+                    dict_shapes[i][j].point_data['colors'] = b.astype('uint8')
+                    p.add_mesh(dict_shapes[i][j],
+                               scalars='colors',
+                               rgb=True,
+                               point_size=1)
+                    volume_pred = np.round(dict_shapes[i][j].volume / 1000, decimals=2)
+                    dict_text[i][j].update({'Vol.': volume_pred})
+                except:
+                    dict_text[i][j].update({'Vol.': 0})
+
                 p.camera_position = 'yz'
                 p.camera.azimuth = -30
                 '''
@@ -587,8 +1158,6 @@ def plotter_evolution_shapematrix(dict_of_shapepath,  savepath, dict_text0, dict
                            point_size=1)
                 '''
 
-            volume_pred = np.round(dict_shapes[i][j].volume * 60 * 60 * 60 / 1000, decimals=2)
-            dict_text[i][j].update({'Vol.': volume_pred})
             #dict_text[i][j]['age'] = (230 - 3.) * dict_text[i][j]['age'].detach().cpu().numpy()[0] + 3.
             #dict_text[i][j]['weight'] = (150.0 - 6.75) * dict_text[i][j]['weight'].detach().cpu().numpy()[0]  + 6.75
 
@@ -610,11 +1179,10 @@ def plotter_evolution_shapematrix(dict_of_shapepath,  savepath, dict_text0, dict
         #p.camera.zoom(1)
     #p.export_obj('/home/jyn/NAISR/examples/pediatri c_airway/statistics/' + str(filename) + '.obj')
     p.link_views()
-    p.screenshot(savepath +  'shapemat.png')
-    p.export_html(savepath + 'shappemat.html', backend='panel')
+    p.screenshot(savepath + 'shapemat.png',transparent_background=True)
+    p.export_html(savepath + 'shappemat.html')
     p.close()
     #pd.DataFrame.from_records(list_text).transpose().to_csv(savepath + '_cov_vol_.csv')
-
 
     return
 
@@ -718,7 +1286,7 @@ def plotter_3d_airway_reconstruction_with_vf(verts, faces, gradient_covariates, 
     pv.global_theme.interactive = True
     p.add_mesh(pv.PolyData(verts),cmap=plt.cm.get_cmap("cool"), scalars=gradient_covariates,  clim=[-0.1, 0.1]) #scalars=verts_color, rgb=True)
     p.screenshot(png_filename_out)
-    p.export_html(html_filename_out, backend='panel')
+    p.export_html(html_filename_out)
     print(png_filename_out)
 
     #pv_shape.add_field_data(gradient_covariates, 'sdf_for_covariates')
@@ -740,7 +1308,7 @@ def plotter_3d_airway_reconstruction_with_vf(verts, faces, gradient_covariates, 
     p.screenshot(os.path.join(savedir,  'recons3d.png'))
     #p.enable_zoom_style()
     #p.export_vtkjs(savepath)
-    p.export_html(os.path.join(savedir,  'recons3d.html'), backend='panel')
+    p.export_html(os.path.join(savedir,  'recons3d.html'))
     p.close()
     return
 
@@ -814,29 +1382,194 @@ def plotter_2d_csa(list_path_gt_csa, list_path_pred_csa, savedir_2dcsa_subj):
     p.add_floor('-z', lighting=True, color='grey', pad=1.0)
     # p.enable_shadows()
     p.screenshot(os.path.join(savedir_2dcsa_subj, 'comp2d.png'))
-    p.export_html(os.path.join(savedir_2dcsa_subj, 'comp2d.html'), backend='panel')
+    p.export_html(os.path.join(savedir_2dcsa_subj, 'comp2d.html'))
     p.close()
 
     return
 
 
-def plotter_3d_airway_reconstruction(arr_dealigned_points, savedir):
+def plotter_3d_airway_pcds(arr_dealigned_points, savedir):
 
     pv.start_xvfb()
     pv.global_theme.background = 'white'
     p = pv.Plotter(lighting="light_kit", shape=(1,1), off_screen=True, window_size=[1024, 1024])
     pv.global_theme.background ='white'
     pv.global_theme.interactive = True
-
-    p.add_mesh(pv.PolyData(arr_dealigned_points), point_size=1, color='lightblue')
-
+    try:
+        p.add_mesh(pv.PolyData(arr_dealigned_points), point_size=1, color='lightblue')
+    except:
+        print('No Mesh')
+    p.remove_legend()
     p.screenshot(os.path.join(savedir,  'recons3d.png'))
-    #p.enable_zoom_style()
-    #p.export_vtkjs(savepath)
-    p.export_html(os.path.join(savedir,  'recons3d.html'), backend='panel')
+    p.export_html(os.path.join(savedir,  'recons3d.html'))
     p.close()
     return
 
+
+def plotter_evolution_traj(shapetype):
+    if shapetype == 'Airway':
+        return plotter_3d_airway_traj
+    elif shapetype == "ADNI":
+        return plotter_3d_adni_traj
+    elif shapetype == 'starman':
+        return plotter_2d_starman_traj
+    else:
+        print("Incorrect shapetype for plotting shapematrix")
+        return
+
+def plotter_3d_airway_traj(path_shape, savepath):
+
+    pv_shape = pv.read(path_shape['path_pred'])
+
+    p = pv.Plotter(lighting="light_kit",
+                   off_screen=True,
+                   border=False)
+    #p.camera_set = True
+    pv.global_theme.background = 'white'
+    pv.global_theme.interactive = True
+
+
+    pv_shape.compute_normals(inplace=True)
+    a = pv_shape.point_normals.copy()  # .points.copy()
+    b = np.zeros_like(a)
+    a[:, 0] = (a[:, 0] - a[:, 0].min()) / (a[:, 0].max() - a[:, 0].min())
+    a[:, 1] = (a[:, 1] - a[:, 1].min()) / (a[:, 1].max() - a[:, 1].min())
+    a[:, 2] = (a[:, 2] - a[:, 2].min()) / (a[:, 2].max() - a[:, 2].min())
+    a[:, 0] = np.round((0.3 * a[:, 0] + 0.7) * 255)
+    a[:, 1] = np.round((0.3 * a[:, 1] + 0.7) * 255)
+    a[:, 2] = np.round((0.3 * a[:, 2] + 0.7) * 255)
+    b[:, 0] = a[:, 2]
+    b[:, 1] = a[:, 1]
+    b[:, 2] = a[:, 0]
+
+    pv_shape.point_data['colors'] = b.astype('uint8')
+    p.add_mesh(pv_shape,
+               scalars='colors',
+               rgb=True,
+               point_size=1)
+    volume_pred = np.round(pv_shape.volume / 1000, decimals=2)
+    # p.camera_position = 'yz'
+    # p.camera.azimuth = -30
+    p.camera_position = [(476.53509987170224, -303.6986387327721, 12.957439422607422),
+                         (-3.7923927307128906, -26.381431579589844, 12.957439422607422),
+                         (0.0, 0.0, 1.0)]
+
+
+    if volume_pred is not None:
+        current_text = 'Vol.' + ': ' + str(volume_pred) + '\n'
+        p.add_text(current_text, color='black',
+                   position='lower_left',
+                   font_size=15,
+                   font='times')
+    p.link_views()
+    p.screenshot(savepath, transparent_background=True)
+    p.close()
+    return
+
+
+def plotter_3d_adni_traj(path_shape, savepath):
+    pv_shape = pv.read(path_shape['path_pred'])
+
+    p = pv.Plotter(lighting="light_kit",
+                   off_screen=True,
+                   border=False)
+
+    pv.global_theme.background = 'white'
+    pv.global_theme.interactive = True
+
+    pv_shape.compute_normals(inplace=True)
+    a = pv_shape.point_normals.copy()  # .points.copy()
+    b = np.zeros_like(a)
+    a[:, 0] = (a[:, 0] - a[:, 0].min()) / (a[:, 0].max() - a[:, 0].min())
+    a[:, 1] = (a[:, 1] - a[:, 1].min()) / (a[:, 1].max() - a[:, 1].min())
+    a[:, 2] = (a[:, 2] - a[:, 2].min()) / (a[:, 2].max() - a[:, 2].min())
+    a[:, 0] = np.round((0.3 * a[:, 0] + 0.7) * 255)
+    a[:, 1] = np.round((0.3 * a[:, 1] + 0.7) * 255)
+    a[:, 2] = np.round((0.3 * a[:, 2] + 0.7) * 255)
+    b[:, 0] = a[:, 2]
+    b[:, 1] = a[:, 1]
+    b[:, 2] = a[:, 0]
+
+    pv_shape.point_data['colors'] = b.astype('uint8')
+    p.add_mesh(pv_shape,
+               scalars='colors',
+               rgb=True,
+               point_size=1)
+    volume_pred = np.round(pv_shape.volume / 1000, decimals=2)
+
+    # p.camera_position = 'xy'
+    # p.camera.view_angle = 160.0
+    # p.camera.roll = -10
+    # p.camera.azimuth = -30
+    #
+    # p.camera.zoom(5)
+    p.camera_position = [(-42.27937109247018, -7.831884125866158, 76.28916696971844),
+ (0.5183186531066895, -0.28549671173095703, 1.0178534984588623),
+ (-0.17364817766693033, 0.9848077530122081, 0.0)]
+
+    if volume_pred is not None:
+        current_text = 'Vol.' + ': ' + str(volume_pred) + '\n'
+        p.add_text(current_text, color='black',
+                   position='lower_left',
+                   font_size=15,
+                   font='times')
+    p.link_views()
+    p.screenshot(savepath, transparent_background=True)
+    p.close()
+    return
+
+
+
+def plotter_2d_starman_traj(dict_of_shapepath, savepath):
+
+
+    # pv.start_xvfb()
+    # p = pv.Plotter(lighting="light_kit",
+    #                off_screen=True,
+    #                border=True, window_size=[1024, 1024])
+    #
+    # pv.global_theme.background = 'white'
+    # pv.global_theme.interactive = True
+    #
+    #
+    #
+    # pv_pred = pv.read(dict_of_shapepath['path_pred'])
+    # if 'path_gt' in list(dict_of_shapepath.keys()):
+    #     pv_gt = pv.read(dict_of_shapepath['path_gt'])
+
+    #
+    #
+    # p.add_mesh(pv_pred, color='red',line_width=3)
+    # p.add_mesh(pv_gt, color='blue',line_width=3)
+    #
+    # p.camera_position = 'xy'
+    # p.camera.azimuth = -30
+    #
+    # #p.camera.zoom(0.5)
+    # p.set_scale(xscale=0.25)
+    # p.set_scale(yscale=0.25)
+    # p.set_scale(zscale=0.25)
+    #
+    # p.link_views()
+    # p.screenshot(savepath)
+    # p.close()
+
+    pv_pred = pv.read(dict_of_shapepath['path_pred'])
+    if 'path_gt' in list(dict_of_shapepath.keys()):
+        pv_gt = pv.read(dict_of_shapepath['path_gt'])
+    arr_pred_2d = np.array(pv_pred.points)
+    arr_gt_2d = np.array(pv_gt.points)
+
+    ax = plt.gca()
+    ax.plot(arr_pred_2d[:, 0], arr_pred_2d[:, 1], c='r')
+    ax.plot(arr_gt_2d[:, 0], arr_gt_2d[:, 1], c='b')
+    ax.set_xlim([-2.5, 2.5])
+    ax.set_ylim([-2.5, 2.5])
+    plt.savefig(savepath)
+
+
+
+    return
 
 def plotter_3d_airway_from_2d_evaluation(arr_gt_3dcsa, arr_pred_3dcsa, arr_all_centerlines, savedir):
 
@@ -851,13 +1584,13 @@ def plotter_3d_airway_from_2d_evaluation(arr_gt_3dcsa, arr_pred_3dcsa, arr_all_c
     p.add_mesh(pv.PolyData(arr_all_centerlines), point_size=10, color='black')
 
     p.screenshot(os.path.join(savedir,  'comp3d.png'))
-    p.export_html(os.path.join(savedir,  'comp3d.html'), backend='panel')
+    p.export_html(os.path.join(savedir,  'comp3d.html'))
     p.close()
     return
 
 
 
-def plotter_3d_airway_evaluation(arr_gt_3dcsa, arr_pred_3dcsa, savedir):
+def plotter_3d_shape_evaluation(arr_gt_3d, arr_pred_3d, savedir):
 
     pv.start_xvfb()
     pv.global_theme.background = 'white'
@@ -865,12 +1598,48 @@ def plotter_3d_airway_evaluation(arr_gt_3dcsa, arr_pred_3dcsa, savedir):
     pv.global_theme.background ='white'
     pv.global_theme.interactive = True
 
-    p.add_mesh(pv.PolyData(arr_gt_3dcsa), point_size=3, color='lightblue', opacity=0.3)
-    p.add_mesh(pv.PolyData(arr_pred_3dcsa), point_size=3, color='pink', opacity=0.3)
+    p.add_mesh(pv.PolyData(arr_gt_3d), point_size=3, color='blue', opacity=0.3)
+    try:
+        p.add_mesh(pv.PolyData(arr_pred_3d), point_size=3, color='pink', opacity=0.3)
+    except:
+        print('Empty Mesh!')
     p.screenshot(os.path.join(savedir,  'comp3d.png'))
-    p.export_html(os.path.join(savedir,  'comp3d.html'), backend='panel')
+    p.export_html(os.path.join(savedir,  'comp3d.html'))
     p.close()
     return
+
+
+def create_lines_of_contour(num_of_points):
+    np_start = np.arange(num_of_points)
+    np_end = np.arange(num_of_points) + 1
+    np_end[np_end>=num_of_points] -= num_of_points
+    #lines = np.concatenate((np.ones_like(np_start[:, None])*2, np_start[:, None], np_end[:, None]), axis=-1)
+    lines = np.concatenate((np_start[:, None], np_end[:, None]), axis=-1)
+    return lines
+def plotter_2d_shape_evaluation(arr_gt_2d, arr_pred_2d, savedir):
+
+    # pv.start_xvfb()
+    # pv.global_theme.background = 'white'
+    # p = pv.Plotter(lighting="light_kit", shape=(1,1), off_screen=True, window_size=[1024, 1024])
+    # pv.global_theme.background ='white'
+    # pv.global_theme.interactive = True
+    #
+    # arr_pred_2d = np.concatenate((arr_pred_2d, np.zeros_like(arr_pred_2d[:, [0]])), axis=-1)
+    # arr_gt_2d = np.concatenate((arr_gt_2d, np.zeros_like(arr_gt_2d[:, [0]])), axis=-1)
+    # arr_pred_lines = create_lines_of_contour(len(arr_pred_2d))
+    #
+    # p.add_mesh(pv.PolyData(arr_gt_2d, lines=create_lines_of_contour(len(arr_gt_2d))), point_size=3, color='lightblue', opacity=0.3)
+    # p.add_mesh(pv.PolyData(arr_pred_2d, lines=create_lines_of_contour(len(arr_pred_2d))), point_size=3, color='pink', opacity=0.3)
+    # #p.screenshot(os.path.join(savedir,  'comp3d.png'))
+    # #p.export_html(os.path.join(savedir,  'comp3d.html'), backend='panel')
+    # p.export_vtkjs(os.path.join(savedir,  'comp3d.png'))
+    # p.close()
+    plt.plot(arr_pred_2d[:, 0], arr_pred_2d[:, 1], c='r')
+    plt.plot(arr_gt_2d[:, 0], arr_gt_2d[:, 1], c='b')
+    plt.savefig(os.path.join(savedir,  'comp3d.png'))
+    plt.close()
+    return
+
 
 
 def plotter_3d_airway_interpolation(list_arr_gt_3dcsa, list_arr_pred_3dcsa, savedir):
@@ -891,6 +1660,190 @@ def plotter_3d_airway_interpolation(list_arr_gt_3dcsa, list_arr_pred_3dcsa, save
     p.add_mesh(pv.PolyData(list_arr_gt_3dcsa[1] + centers[-1]), point_size=3, color='lightblue', opacity=0.3)
 
     p.screenshot(os.path.join(savedir,  'interpolation.png'))
-    p.export_html(os.path.join(savedir,  'interpolation.html'), backend='panel')
+    p.export_html(os.path.join(savedir,  'interpolation.html'))
     p.close()
+    return
+
+
+def plotter_evolution_across_epochs_airway(dict_of_shapepath, savepath):
+    #dict_text = dict_text0.copy()
+
+    pv.start_xvfb()
+    num_of_x = len(dict_of_shapepath.keys())
+    p = pv.Plotter(lighting="light_kit",
+                   shape=(1, num_of_x),
+                   window_size=(num_of_x * 256, 1 * 256),
+                   off_screen=True,
+                   border=False)
+
+    pv.global_theme.background = 'white'
+    pv.global_theme.interactive = True
+
+    dict_shapes = {}
+
+    for i, dict_subset in dict_of_shapepath.items():
+        dict_shapes[i] = pv.read(dict_of_shapepath[i]['path_pred'])
+
+    i=0
+    for ith_i_idx, ith_shape in dict_shapes.items():
+        p.subplot(0, i)
+        try:
+            dict_shapes[ith_i_idx].compute_normals(inplace=True)
+            a = dict_shapes[ith_i_idx].point_normals.copy()  # .points.copy()
+            b = np.zeros_like(a)
+            a[:, 0] = (a[:, 0] - a[:, 0].min()) / (a[:, 0].max() - a[:, 0].min())
+            a[:, 1] = (a[:, 1] - a[:, 1].min()) / (a[:, 1].max() - a[:, 1].min())
+            a[:, 2] = (a[:, 2] - a[:, 2].min()) / (a[:, 2].max() - a[:, 2].min())
+            a[:, 0] = np.round((0.3 * a[:, 0] + 0.7) * 255)
+            a[:, 1] = np.round((0.3 * a[:, 1] + 0.7) * 255)
+            a[:, 2] = np.round((0.3 * a[:, 2] + 0.7) * 255)
+            b[:, 0] = a[:, 2]
+            b[:, 1] = a[:, 1]
+            b[:, 2] = a[:, 0]
+
+            dict_shapes[ith_i_idx].point_data['colors'] = b.astype('uint8')
+            p.add_mesh(dict_shapes[ith_i_idx],
+                       scalars='colors',
+                       rgb=True,
+                       point_size=1)
+            volume_pred = np.round(dict_shapes[i].volume / 1000, decimals=2)
+            #dict_text[i].update({'Vol.': volume_pred})
+        except:
+            #dict_text[i].update({'Vol.': 0})
+            print('1')
+
+        p.camera_position = 'yz'
+        p.camera.azimuth = -30
+        p.camera.zoom(0.8)
+
+        p.add_text(ith_i_idx, color='black',
+                   #position='lower_left',
+                   font_size=15,
+                   font='times')
+        i+=1
+    p.screenshot(os.path.join(savepath, 'shapemat.png'), transparent_background=True)
+    p.export_html(os.path.join(savepath, 'shappemat.html'))
+    p.close()
+    # pd.DataFrame.from_records(list_text).transpose().to_csv(savepath + '_cov_vol_.csv')
+
+    return
+
+
+def plotter_evolution_across_epochs(shapetype):
+    if shapetype == 'Airway':
+        return plotter_evolution_across_epochs_airway
+    if shapetype == 'ADNI':
+        return plotter_evolution_across_epochs_adni
+    if shapetype == 'starman':
+        return plotter_evolution_across_epochs_starman
+    else:
+        print("Incorrect shapetype for plotting shapematrix")
+        return
+
+
+def plotter_evolution_across_epochs_adni(dict_of_shapepath,  savepath):
+    pv.start_xvfb()
+    num_of_x = len(dict_of_shapepath.keys())
+    p = pv.Plotter(lighting="light_kit",
+                   shape=(1, num_of_x),
+                   window_size=(num_of_x * 256, 1 * 256),
+                   off_screen=True,
+                   border=False)
+
+
+    pv.global_theme.background = 'white'
+    pv.global_theme.interactive = True
+
+    dict_shapes = {}
+
+    for i, dict_subset in dict_of_shapepath.items():
+        dict_shapes[i] = pv.read(dict_of_shapepath[i]['path_pred'])
+
+
+
+    i=0
+    for ith_i_idx, ith_shape in dict_shapes.items():
+        p.subplot(0, i)
+        try:
+            dict_shapes[ith_i_idx].compute_normals(inplace=True)
+            a = dict_shapes[ith_i_idx].point_normals.copy()  # .points.copy()
+            b = np.zeros_like(a)
+            a[:, 0] = (a[:, 0] - a[:, 0].min()) / (a[:, 0].max() - a[:, 0].min())
+            a[:, 1] = (a[:, 1] - a[:, 1].min()) / (a[:, 1].max() - a[:, 1].min())
+            a[:, 2] = (a[:, 2] - a[:, 2].min()) / (a[:, 2].max() - a[:, 2].min())
+            a[:, 0] = np.round((0.4 * a[:, 0] + 0.6) * 255)
+            a[:, 1] = np.round((0.4 * a[:, 1] + 0.6) * 255)
+            a[:, 2] = np.round((0.4 * a[:, 2] + 0.6) * 255)
+            b[:, 0] = a[:, 2]
+            b[:, 1] = a[:, 1]
+            b[:, 2] = a[:, 0]
+
+            dict_shapes[ith_i_idx].point_data['colors'] = b.astype('uint8')
+            p.add_mesh(dict_shapes[ith_i_idx],
+                       scalars='colors',
+                       rgb=True,
+                       point_size=1)
+            p.camera_position = 'xy'
+            p.camera.view_angle = 160.0
+            p.camera.roll = -10
+            p.camera.azimuth = -30
+            p.camera.zoom(4.)
+
+            p.add_text(ith_i_idx, color='black',
+                       #position='lower_left',
+                       font_size=15,
+                       font='times')
+            i += 1
+        except:
+            #dict_text[i].update({'Vol.': 0})
+            print('1')
+
+    p.screenshot(os.path.join(savepath, 'shapemat.png'))
+    p.export_html(os.path.join(savepath, 'shappemat.html'))
+    p.close()
+    # pd.DataFrame.from_records(list_text).transpose().to_csv(savepath + '_cov_vol_.csv')
+
+    return
+
+
+def plotter_evolution_across_epochs_starman(dict_of_shapepath,  savepath):
+    pv.start_xvfb()
+    num_of_x = len(dict_of_shapepath.keys())
+    p = pv.Plotter(lighting="light_kit",
+                   shape=(1, num_of_x),
+                   window_size=(256*num_of_x, 256),
+                   off_screen=True,
+                   border=False)
+
+    pv.global_theme.background = 'white'
+    pv.global_theme.interactive = True
+
+    dict_shapes_pred = {}
+    dict_shapes_gt = {}
+
+    for i, dict_subset in dict_of_shapepath.items():
+        dict_shapes_pred[i] = pv.read(dict_of_shapepath[i]['path_pred'])
+        dict_shapes_gt[i] = pv.read(dict_of_shapepath[i]['path_gt'])
+
+    i=0
+    for ith_i_idx, ith_shape in dict_shapes_pred.items():
+        p.subplot(0, i)
+
+        p.add_mesh(dict_shapes_pred[ith_i_idx], color='red',line_width=3)
+        p.add_mesh(dict_shapes_gt[ith_i_idx], color='blue',line_width=3)
+
+        p.add_text(ith_i_idx, color='black',
+                   #position='lower_left',
+                   font_size=15,
+                   font='times')
+
+        p.camera_position = 'xy'
+        p.camera.azimuth = -30
+        i+=1
+    p.link_views()
+    p.screenshot(os.path.join(savepath, 'shapemat.png'))
+    p.export_html(os.path.join(savepath, 'shappemat.html'))
+    p.close()
+    # pd.DataFrame.from_records(list_text).transpose().to_csv(savepath + '_cov_vol_.csv')
+
     return

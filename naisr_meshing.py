@@ -275,9 +275,58 @@ def create_mesh_airway(
     return dict_metrics
 
 
+def create_mesh_reconstruction(shapetype):
+    if shapetype == 'starman':
+        return create_mesh_2d_reconstruction
+    elif shapetype == 'ADNI':
+        return create_mesh_3d_reconstruction
+    elif shapetype == 'Airway':
+        return create_mesh_3d_reconstruction
 
 
-def create_mesh_3dairway_reconstruction(
+# def create_mesh_reconstruction(model,
+#         lat_vec,
+#         attr,
+#         gt,
+#         savedir,
+#         shapetype='ADNI',
+#         output_type='model_out',
+#         dim=3,
+#         N=1024,
+#         device='cpu',
+#         EVALUATE=True,):
+#
+#
+#     if dim == 3:
+#         dict_metrics = create_mesh_3d_reconstruction(
+#         model,
+#         lat_vec,
+#         attr,
+#         gt,
+#         savedir,
+#         shapetype=shapetype,
+#         output_type=output_type,
+#         dim=dim,
+#         N=N,
+#         device=device,
+#         EVALUATE=EVALUATE)
+#     elif dim == 2:
+#         dict_metrics = create_mesh_2d_reconstruction(
+#         model,
+#         lat_vec,
+#         attr,
+#         gt,
+#         savedir,
+#         shapetype=shapetype,
+#         output_type=output_type,
+#         dim=dim,
+#         N=N,
+#         device=device,
+#         EVALUATE=EVALUATE)
+#     return dict_metrics
+
+
+def create_mesh_3d_reconstruction(
         model,
         lat_vec,
         attr,
@@ -285,15 +334,17 @@ def create_mesh_3dairway_reconstruction(
         savedir,
         output_type='model_out',
         dim=3,
+        shapetype='ADNI',
         N=1024,
         device='cpu',
         EVALUATE=True,
+        **kwargs,
 ):
     dict_metrics = {}
 
     head = 0
     num_samples = N ** 3
-    max_batch = 16 ** dim
+    max_batch = 32 ** dim
 
     # NOTE: the voxel_origin is actually the (bottom, left, down) corner, not the middle
     voxel_origin = np.array([-1., -1., -1.]) * 3
@@ -304,12 +355,9 @@ def create_mesh_3dairway_reconstruction(
 
     # transform first 3 columns
     # to be the x, y, z index
-    samples[:,
-    2] = overall_index % N  # (overall_index.long() % (N*N)) % N #overall_index % N # (overall_index.long() % (N*N)) % N  #overall_index % N
-    samples[:, 1] = (
-                                overall_index.long() / N) % N  # (overall_index.long() % (N*N)) // N #(overall_index.long() % (N*N)) / N #(overall_index.long() / N) % N
-    samples[:, 0] = ((
-                                 overall_index.long() / N) / N) % N  # overall_index.long() // (N * N) #((overall_index.long() // N) // N) % N #(overall_index.long() / N) / N #((overall_index.long() / N) / N) % N
+    samples[:, 2] = overall_index % N
+    samples[:, 1] = (overall_index.long() / N) % N
+    samples[:, 0] = ((overall_index.long() / N) / N) % N
 
     # transform first 3 columns
     # to be the x, y, z coordinate
@@ -342,23 +390,23 @@ def create_mesh_3dairway_reconstruction(
         sdf_values = sdf_values.reshape(N, N, N)
     else:
         sdf_values = sdf_values.reshape(N, N)[None, :, :]
-    end = time.time()
-    print("sampling takes: %f" % (end - start))
+
 
     if dim == 3:
-        convert_sdf_samples_to_ply(
+        convert_3d_sdf_samples_to_ply(
             sdf_values.data.cpu(),
             voxel_origin,
             voxel_size,
             savedir,
         )
+        end = time.time()
+        print("sampling takes: %f" % (end - start))
 
-
-        dict_metrics['path_pred'], arr_pred_points = reconstruct_3D_airway(savedir)
+        dict_metrics['path_pred'], arr_pred_points = reconstruct_3D_shape(shapetype=shapetype, savedir=savedir)
 
         if EVALUATE:
             # savepath_viz_comparison = path_aligned_surface + '_comp'
-            dict_metrics['hausdorff'], dict_metrics['chamfer'] = evaluate_3D_airway_reconstruction(
+            dict_metrics['hausdorff'], dict_metrics['chamfer'] = evaluate_3D_reconstruction(
                 dict_metrics['path_pred'],
                 gt['gt_path'],
                 savedir)
@@ -367,6 +415,147 @@ def create_mesh_3dairway_reconstruction(
     print(dict_metrics)
     return dict_metrics
 
+
+
+
+def create_mesh_2d_reconstruction(
+        model,
+        lat_vec,
+        attr,
+        gt,
+        savedir,
+        shapetype='starman',
+        output_type='model_out',
+        dim=2,
+        N=1024,
+        device='cpu',
+        EVALUATE=True,
+        **kwargs,
+):
+    dict_metrics = {}
+
+    head = 0
+    num_samples = N ** 2
+    max_batch = 16 ** dim
+
+    # NOTE: the voxel_origin is actually the (bottom, left, down) corner, not the middle
+    voxel_origin = np.array([-1., -1.,]) * 3
+    voxel_size = 2.0 / (N - 1) * 3
+
+    overall_index = torch.arange(0, N ** 2, 1, out=torch.LongTensor())
+    samples = torch.zeros(N ** 2, 3)
+
+    # transform first 3 columns
+    # to be the x, y, z index
+    samples[:, 1] = overall_index % N
+    samples[:, 0] = (overall_index.long() / N) % N
+    # transform first 3 columns
+    # to be the x, y, z coordinate
+    samples[:, 0] = (samples[:, 0].float() * voxel_size) + voxel_origin[0]
+    samples[:, 1] = (samples[:, 1].float() * voxel_size) + voxel_origin[1]
+    # samples *=2
+
+    start = time.time()
+
+    while head < num_samples:
+        # print(head)
+        sample_subset = samples[head: min(head + max_batch, num_samples), 0:dim].to(device)
+        if type(lat_vec) == dict:
+            lat_vec_subset = {}
+            for name, value in lat_vec.items():
+                lat_vec_subset[name] = lat_vec[name][0, [0], :].repeat(sample_subset.shape[0], 1).to(device)[None, :, :]
+        else:
+            lat_vec_subset = lat_vec[0, [0], :].repeat(sample_subset.shape[0], 1).to(device)[None, :, :]
+        samples[head: min(head + max_batch, num_samples), -1] = (
+            model(sample_subset[None, :, range(dim)], attr, lat_vec_subset, training=False)[output_type]
+                .squeeze()  # .squeeze(1)
+                .detach()
+                .cpu()
+        )
+        head += max_batch
+
+    sdf_values = samples[:, -1]
+    sdf_values = sdf_values.reshape(N, N)
+    end = time.time()
+    print("sampling takes: %f" % (end - start))
+
+    convert_2d_sdf_samples_to_ply(
+        sdf_values.data.cpu(),
+        voxel_origin,
+        voxel_size,
+        savedir,
+    )
+
+    dict_metrics['path_pred'] = os.path.join(savedir, 'surface.vtk') #reconstruct_2D_shape(savedir)
+    if 'MAKE_GT' in list(kwargs.keys()):
+        MAKE_GT = kwargs['MAKE_GT']
+    else:
+        MAKE_GT = False
+    if 'MAKE_TEMPLATE' in list(kwargs.keys()):
+        MAKE_TEMPLATE = kwargs['MAKE_TEMPLATE']
+    else:
+        MAKE_TEMPLATE = False
+
+    if EVALUATE:
+        evaluate_2D_reconstruction(
+            dict_metrics['path_pred'],
+            gt['gt_path'],
+            savedir)
+    elif MAKE_GT:
+        #from publicdata import generate_shape_conditioned_on_covariates
+        covariates = {'cov_1': float(attr['cov_1']), 'cov_2': float(attr['cov_2'])}
+        pv_simulated_gt = generate_shape_conditioned_on_covariates(gt['mean_contour'], covariates, gt['mean_control'])
+        evaluate_2D_reconstruction(
+            dict_metrics['path_pred'],
+            pv_simulated_gt,
+            savedir)
+
+        dict_metrics['path_gt'] = os.path.join(savedir, 'gt_2d.vtk')
+        pv_simulated_gt.save(dict_metrics['path_gt'])
+
+    elif MAKE_TEMPLATE:
+        #from publicdata import generate_shape_conditioned_on_covariates
+        covariates = {'cov_1': float(attr['cov_1']), 'cov_2': float(attr['cov_2'])}
+        pv_template = pv.read('examples/starman/template.vtk')
+        arr_control_points = np.load("examples/starman/control_template.npy")
+        pv_simulated_gt = generate_shape_conditioned_on_covariates(pv_template, covariates, arr_control_points)
+        evaluate_2D_reconstruction(
+            dict_metrics['path_pred'],
+            pv_simulated_gt,
+            savedir)
+
+        dict_metrics['path_gt'] = os.path.join(savedir, 'gt_2d.vtk')
+        pv_simulated_gt.save(dict_metrics['path_gt'])
+
+    print(dict_metrics)
+    return dict_metrics
+
+def generate_shape_conditioned_on_covariates(pv_contour, covariates, arr_control_pts):
+    covariates = [covariates['cov_1'], covariates['cov_1'], covariates['cov_2'], covariates['cov_2']]
+    arr_points = pv_contour.points[:, [0, 1]]
+    arr_deformed = arr_points.copy()
+    from publicdata import apply_deformation, create_deformation
+    UP_VECTOR = np.array([0., 1.])
+    FORWARD_VECTOR = np.array([1., 0.])
+
+    list_of_VECTORS = [UP_VECTOR, UP_VECTOR, FORWARD_VECTOR * (-1), FORWARD_VECTOR]
+    for ith_cov in range(len(covariates)):
+        if ith_cov < 2:
+            ith_control_pts = arr_control_pts[ith_cov]
+            arr_deformed = apply_deformation(points=arr_deformed,
+                                             deformation= create_deformation(arr_points, control_point=ith_control_pts, VECTOR=list_of_VECTORS[ith_cov]),
+                                             covariate_value=covariates[ith_cov])
+        else:
+            ith_control_pts = arr_control_pts[ith_cov]
+            arr_deformed = apply_deformation(points=arr_deformed,
+                                             deformation= create_deformation(arr_points, control_point=ith_control_pts, VECTOR=list_of_VECTORS[ith_cov]),
+                                             covariate_value=covariates[ith_cov] + 1)
+
+    arr_deformed_contour = np.concatenate((arr_deformed, np.zeros_like(arr_deformed[:, [0]])), axis=-1)
+    pv_deformed_contour = pv_contour.copy()
+    pv_deformed_contour.points = arr_deformed_contour
+
+    return pv_deformed_contour
 
 def create_mesh_3dairway_reconstruction_with_transferred_template(
         model,
@@ -892,7 +1081,7 @@ def create_mesh_airway_template(
     if not os.path.exists(savedir_template):
         os.mkdir(savedir_template)
     if dim == 3:
-        convert_sdf_samples_to_ply(
+        convert_3d_sdf_samples_to_ply(
             sdf_values.data.cpu(),
             voxel_origin,
             voxel_size,
@@ -931,7 +1120,7 @@ def convert_sdf_samples_in_2D(pytorch_2d_sdf_tensor, savepath):
     return
 
 
-def convert_sdf_samples_to_ply(
+def convert_3d_sdf_samples_to_ply(
         pytorch_3d_sdf_tensor,
         voxel_grid_origin,
         voxel_size,
@@ -1022,6 +1211,100 @@ def convert_sdf_samples_to_ply(
     return verts, faces
 
 
+def convert_2d_sdf_samples_to_ply(
+        pytorch_2d_sdf_tensor,
+        voxel_grid_origin,
+        voxel_size,
+        savedir,
+        offset=None,
+        scale=None,
+):
+    """
+    Convert sdf samples to .ply
+
+    :param pytorch_3d_sdf_tensor: a torch.FloatTensor of shape (n,n,n)
+    :voxel_grid_origin: a list of three floats: the bottom, left, down origin of the voxel grid
+    :voxel_size: float, the size of the voxels
+    :ply_filename_out: string, path of the filename to save to
+
+    This function adapted from: https://github.com/RobotLocomotion/spartan
+    """
+
+    def create_lines_of_contour(num_of_points):
+        np_start = np.arange(num_of_points)
+        np_end = np.arange(num_of_points) + 1
+        np_end[np_end>=num_of_points] -= num_of_points
+        #lines = np.concatenate((np.ones_like(np_start[:, None])*2, np_start[:, None], np_end[:, None]), axis=-1)
+        lines = np.concatenate((np_start[:, None], np_end[:, None]), axis=-1)
+        return lines
+
+    start_time = time.time()
+    numpy_2d_sdf_tensor = pytorch_2d_sdf_tensor.numpy()
+    verts, faces, normals, values = np.zeros((1, 3)), np.zeros((0, 3)), np.zeros((0, 3)), np.zeros(0)
+
+    print(numpy_2d_sdf_tensor.max())
+    print(numpy_2d_sdf_tensor.min())
+
+    try:
+        #verts, faces, normals, values = measure.marching_cubes_lewiner(numpy_2d_sdf_tensor, level=0., spacing=[voxel_size] * 2)
+        verts = measure.find_contours(numpy_2d_sdf_tensor, 0)[0]
+        faces = create_lines_of_contour(len(verts))
+    except:
+        path_aligned_surface = os.path.join(savedir, 'surface.vtk')
+        ply_filename_out = os.path.join(savedir, 'surface.ply')
+        surface = pv.PolyData(verts)
+        surface.save(path_aligned_surface)
+        surface.save(ply_filename_out)
+        return verts, faces
+
+    # transform from voxel coordinates to camera coordinates
+    # note x and y are flipped in the output of marching_cubes
+    mesh_points = np.zeros((verts.shape[0], 3))
+    mesh_points[:, 0] = voxel_grid_origin[0]  + verts[:, 0] * voxel_size
+    mesh_points[:, 1] = voxel_grid_origin[1]  + verts[:, 1]* voxel_size
+
+    facesq = np.concatenate((np.ones((faces.shape[0], 1)) * 2, faces), axis=-1).astype('int').flatten()
+    surface = pv.PolyData(mesh_points, lines=facesq)  # .triangulate()
+    path_aligned_surface = os.path.join(savedir, 'surface.vtk')
+    #ply_filename_out = os.path.join(savedir, 'surface.ply')
+    surface.save(path_aligned_surface)
+
+
+    # apply additional offset and scale
+    # if scale is not None:
+    #     mesh_points = mesh_points / scale
+    # if offset is not None:
+    #     mesh_points = mesh_points - offset
+    #
+    # # try writing to the ply file
+    #
+    # num_verts = verts.shape[0]
+    # num_faces = faces.shape[0]
+    #
+    # verts_tuple = np.zeros((num_verts,), dtype=[("x", "f4"), ("y", "f4"), ("z", "f4")])
+    #
+    # for i in range(0, num_verts):
+    #     verts_tuple[i] = tuple(mesh_points[i, :])
+    #
+    # faces_building = []
+    # for i in range(0, num_faces):
+    #     faces_building.append(((faces[i, :].tolist(),)))
+    # faces_tuple = np.array(faces_building, dtype=[("vertex_indices", "i4", (2,))])
+    #
+    # el_verts = plyfile.PlyElement.describe(verts_tuple, "vertex")
+    # el_faces = plyfile.PlyElement.describe(faces_tuple, "face")
+    #
+    # ply_data = plyfile.PlyData([el_verts, el_faces])
+    #
+    # logging.debug("saving mesh to %s" % (ply_filename_out))
+    # ply_data.write(ply_filename_out)
+    #
+    # logging.debug(
+    #     "converting to ply format and writing to file took {} s".format(
+    #         time.time() - start_time
+    #     )
+    # )
+    return #verts, faces
 
 
 def convert_inv_samples_to_ply(
@@ -1157,12 +1440,26 @@ def reconstruct_3D_airway_from_2d(path_centerline_normal, savedir):
     return savepath_pred3d, list_pred_2dcsa
 
 
-def reconstruct_3D_airway(savedir):
+def reconstruct_3D_shape(shapetype, savedir):
     stl_path = os.path.join(savedir, 'surface.stl')
     pv_3dcsa = pv.read(os.path.join(savedir, 'surface.stl'))
-
-    arr_dealigned_points = pv_3dcsa.points * 60  # np.concatenate(list_of_dealigned_points, axis=0)
+    if shapetype == 'ADNI':
+        arr_dealigned_points = pv_3dcsa.points * 10
+    elif shapetype == 'Airway':
+        arr_dealigned_points = pv_3dcsa.points * 60  # np.concatenate(list_of_dealigned_points, axis=0)
     savepath_pred3d = os.path.join(savedir, 'pred_3d.npy')
+    np.save(savepath_pred3d, arr_dealigned_points)
+    pv_3dcsa.points = arr_dealigned_points
+    pv_3dcsa.save(stl_path)
+
+    plotter_3d_airway_pcds(arr_dealigned_points, savedir)
+    return stl_path, arr_dealigned_points
+
+def reconstruct_2D_shape(savedir):
+    pv_3dcsa = pv.read(os.path.join(savedir, 'surface.vtk'))
+
+    arr_dealigned_points = pv_3dcsa.points #* 60  # np.concatenate(list_of_dealigned_points, axis=0)
+    savepath_pred3d = os.path.join(savedir, 'pred_2d.npy')
     np.save(savepath_pred3d, arr_dealigned_points)
     '''
     pv.start_xvfb()
@@ -1180,8 +1477,8 @@ def reconstruct_3D_airway(savedir):
     p.close()
     print(savepath)
     '''
-    plotter_3d_airway_reconstruction(arr_dealigned_points, savedir)
     return savepath_pred3d, arr_dealigned_points
+
 
 
 def evaluate_3D_airway_reconstruction_from_2d(path_centerline_normal,
@@ -1249,39 +1546,49 @@ def evaluate_3D_airway_reconstruction_from_2d(path_centerline_normal,
     return dist
 
 
-def normalize_3d_airway(arr_pred_point_cloud, arr_gt_point_cloud):
+def normalize_3d_pcd(arr_pred_point_cloud, arr_gt_point_cloud):
     max_gt = np.max(arr_gt_point_cloud, axis=0)
     min_gt = np.min(arr_gt_point_cloud, axis=0)
+    #
+    # arr_pred_point_cloud = arr_pred_point_cloud[arr_pred_point_cloud[:, 0] <= max_gt[0]]
+    # arr_pred_point_cloud = arr_pred_point_cloud[arr_pred_point_cloud[:, 1] <= max_gt[1]]
+    # arr_pred_point_cloud = arr_pred_point_cloud[arr_pred_point_cloud[:, 2] <= max_gt[2]]
+    #
+    # arr_pred_point_cloud = arr_pred_point_cloud[arr_pred_point_cloud[:, 0] >= min_gt[0]]
+    # arr_pred_point_cloud = arr_pred_point_cloud[arr_pred_point_cloud[:, 1] >= min_gt[1]]
+    # arr_pred_point_cloud = arr_pred_point_cloud[arr_pred_point_cloud[:, 2] >= min_gt[2]]
 
-    arr_pred_point_cloud = arr_pred_point_cloud[arr_pred_point_cloud[:, 0] <= max_gt[0]]
-    arr_pred_point_cloud = arr_pred_point_cloud[arr_pred_point_cloud[:, 1] <= max_gt[1]]
-    arr_pred_point_cloud = arr_pred_point_cloud[arr_pred_point_cloud[:, 2] <= max_gt[2]]
 
-    arr_pred_point_cloud = arr_pred_point_cloud[arr_pred_point_cloud[:, 0] >= min_gt[0]]
-    arr_pred_point_cloud = arr_pred_point_cloud[arr_pred_point_cloud[:, 1] >= min_gt[1]]
-    arr_pred_point_cloud = arr_pred_point_cloud[arr_pred_point_cloud[:, 2] >= min_gt[2]]
+    # max_length = np.max(np.linalg.norm(arr_gt_point_cloud, axis=-1))
+    # arr_pred_point_cloud = arr_pred_point_cloud[:, [0,1,2]] / max_length
+    # arr_gt_point_cloud = arr_gt_point_cloud[:, [0,1,2]]  / max_length
 
 
-    max_length = np.max(np.linalg.norm(arr_gt_point_cloud, axis=-1))
+    max_length = np.max(max_gt - min_gt)
     arr_pred_point_cloud = arr_pred_point_cloud[:, [0,1,2]] / max_length
     arr_gt_point_cloud = arr_gt_point_cloud[:, [0,1,2]]  / max_length
+
     return arr_pred_point_cloud.astype('float'), arr_gt_point_cloud.astype('float')
 
 
-def evaluate_3D_airway_reconstruction(
+def evaluate_3D_reconstruction(
         path_pred_3dcsa,
         path_gt_3dcsa,
-        savepath):
-    arr_pred_3dcsa = np.load(path_pred_3dcsa)[:, [0, 1, 2]]  # [0:len(list_path_gt_2d_csa)]
+        savedir):
+    arr_pred_3dcsa = pv.read(path_pred_3dcsa).points[:, [0, 1, 2]]  # [0:len(list_path_gt_2d_csa)]
+
     print(path_gt_3dcsa)
     if path_gt_3dcsa[-3::] == 'stl':
         arr_gt_3dcsa = pv.read(path_gt_3dcsa[0]).points[:, [0, 1, 2]]
     else:
         arr_gt_3dcsa = np.load(path_gt_3dcsa[0])[:, [0, 1, 2]]
-    arr_pred_3dcsa, arr_gt_3dcsa = normalize_3d_airway(arr_pred_3dcsa, arr_gt_3dcsa)
+    arr_pred_3dcsa, arr_gt_3dcsa = normalize_3d_pcd(arr_pred_3dcsa, arr_gt_3dcsa)
 
-    h_dist = pcu.hausdorff_distance(arr_gt_3dcsa, arr_pred_3dcsa)
-    c_dist = pcu.chamfer_distance(arr_gt_3dcsa, arr_pred_3dcsa)
+    #h_dist = pcu.hausdorff_distance(arr_gt_3dcsa, arr_pred_3dcsa)
+    #c_dist = pcu.chamfer_distance(arr_gt_3dcsa, arr_pred_3dcsa)
+
+    h_dist = hausdorff_distance_eval(arr_gt_3dcsa, arr_pred_3dcsa, dim=3)
+    c_dist = chamfer_distance_eval(arr_gt_3dcsa, arr_pred_3dcsa, dim=3)
 
 
     # except:
@@ -1303,10 +1610,100 @@ def evaluate_3D_airway_reconstruction(
     p.close()
     print(savepath)
     '''
-    plotter_3d_airway_evaluation(arr_gt_3dcsa, arr_pred_3dcsa, savepath)
+    plotter_3d_shape_evaluation(arr_gt_3dcsa, arr_pred_3dcsa, savedir)
     # plotter_2d_csa(list_path_gt_2d_csa, list_path_pred_csa, savepath + '_2d_comp')
     return h_dist, c_dist
 
+
+
+def normalize_2d_pcd(arr_pred_point_cloud, arr_gt_point_cloud):
+    # max_gt = np.max(arr_gt_point_cloud, axis=0)
+    # min_gt = np.min(arr_gt_point_cloud, axis=0)
+    #
+    # arr_pred_point_cloud = arr_pred_point_cloud[arr_pred_point_cloud[:, 0] <= max_gt[0]]
+    # arr_pred_point_cloud = arr_pred_point_cloud[arr_pred_point_cloud[:, 1] <= max_gt[1]]
+    # arr_pred_point_cloud = arr_pred_point_cloud[arr_pred_point_cloud[:, 2] <= max_gt[2]]
+    #
+    # arr_pred_point_cloud = arr_pred_point_cloud[arr_pred_point_cloud[:, 0] >= min_gt[0]]
+    # arr_pred_point_cloud = arr_pred_point_cloud[arr_pred_point_cloud[:, 1] >= min_gt[1]]
+    # arr_pred_point_cloud = arr_pred_point_cloud[arr_pred_point_cloud[:, 2] >= min_gt[2]]
+
+
+    max_length = np.max(np.linalg.norm(arr_gt_point_cloud, axis=-1))
+    arr_pred_point_cloud = arr_pred_point_cloud[:, [0, 1]] / max_length
+    arr_gt_point_cloud = arr_gt_point_cloud[:, [0, 1]] / max_length
+    return arr_pred_point_cloud.astype('float'), arr_gt_point_cloud.astype('float')
+
+
+
+def hausdorff_distance_eval(arr_source, arr_target, dim):
+    from  scipy.spatial.distance import directed_hausdorff
+    if dim == 3:
+        try:
+            h_dist = pcu.hausdorff_distance(arr_source, arr_target)
+        except:
+            h_dist = 1
+    elif dim == 2:
+        def hdist_2d(arr_s, arr_t):
+             hdist = max(directed_hausdorff(arr_s, arr_t)[0], directed_hausdorff(arr_t, arr_s)[0])
+             return hdist
+        h_dist = hdist_2d(arr_source, arr_target)
+        # arr_source = np.concatenate((arr_source, np.zeros_like(arr_source[:, [0]])), axis=-1)
+        # arr_target = np.concatenate((arr_target, np.zeros_like(arr_target[:, [0]])), axis=-1)
+        # h_dist = pcu.hausdorff_distance(arr_source, arr_target)
+    return h_dist
+
+
+def chamfer_distance_eval(arr_source, arr_target, dim):
+    from  scipy.spatial.distance import cdist
+    if dim == 3:
+        try:
+            c_dist = pcu.chamfer_distance(arr_source, arr_target)
+        except:
+            c_dist = 1
+    elif dim == 2:
+        #arr_source = np.concatenate((arr_source, np.zeros_like(arr_source[:, [0]])), axis=-1)
+        #arr_target = np.concatenate((arr_target, np.zeros_like(arr_target[:, [0]])), axis=-1)
+        c_dist = cdist(arr_source, arr_target) #pcu.chamfer_distance(arr_source, arr_target)
+    return c_dist
+
+
+
+def evaluate_2D_reconstruction(
+        path_pred_2d,
+        path_gt_2d,
+        savedir):
+    pv_pred_2d = pv.read(path_pred_2d).points #np.load(path_pred_2d)[:, [0, 1]]  # [0:len(list_path_gt_2d_csa)]
+    if isinstance(path_gt_2d, pv.PolyData):
+        pv_gt_2d = path_gt_2d.points #.points[:, [0,1]]
+    elif path_gt_2d[-3::] == 'vtk':
+        pv_gt_2d = pv.read(path_gt_2d[0]).points[:, [0, 1]]
+    else:
+        pv_gt_2d = np.load(path_gt_2d[0])[:, [0, 1]]
+    #arr_pred_2d, arr_gt_2d = normalize_2d_pcd(arr_pred_2d, arr_gt_2d)
+
+    #h_dist = hausdorff_distance_eval(arr_gt_2d, arr_pred_2d, dim=2)
+    #c_dist = chamfer_distance_eval(arr_gt_2d, arr_pred_2d, dim=2)
+
+    '''
+    pv.start_xvfb()
+    pv.global_theme.background = 'white'
+    p = pv.Plotter(lighting="light_kit", shape=(1,1), off_screen=True, window_size=[1024, 1024])
+    pv.global_theme.background ='white'
+    pv.global_theme.interactive = True
+
+    p.add_mesh(pv.PolyData(arr_gt_3dcsa), point_size=3, color='lightblue', opacity=0.3)
+    p.add_mesh(pv.PolyData(arr_pred_3dcsa), point_size=3, color='pink', opacity=0.3)
+    p.add_mesh(pv.PolyData(arr_all_centerlines), point_size=10, color='black')
+
+    p.screenshot(savepath + '.png')
+    p.export_html(savepath+ '.html', backend='panel')
+    p.close()
+    print(savepath)
+    '''
+    plotter_2d_shape_evaluation(pv_gt_2d, pv_pred_2d, savedir)
+    # plotter_2d_csa(list_path_gt_2d_csa, list_path_pred_csa, savepath + '_2d_comp')
+    return #h_dist
 
 
 def evaluate_3D_airway_interpolation(
@@ -1407,6 +1804,40 @@ def revert_points_to_template(decoder, lat_vec, attr, savedir, device):
         verts_warped = verts.squeeze()
     return verts_warped
 
+
+def calculate_normal_map(shapetype, decoder, lat_vec, attr, savedir, device):
+    # get model output
+    if isinstance(savedir ,str):
+        ply_filename_out = os.path.join(savedir, 'surface.stl')
+        shape_pred = pv.read(ply_filename_out)
+        verts = np.array(shape_pred.points)
+        if shapetype=='Airway':
+            verts /= 60
+        elif shapetype=='ADNI':
+            verts /= 10
+    elif isinstance(savedir , torch.Tensor):
+        verts = savedir.numpy()
+
+    lat_vec_subset = lat_vec[0, [0], :].repeat(verts.shape[0], 1).to(device)[None, :, :]
+    model_input = torch.from_numpy(verts).to(device).float()[None, :, :]
+    output = decoder(model_input, attr, lat_vec_subset)
+
+    # if 'vec_fields' in list(output.keys()):
+    #     verts_warped = output['vec_fields']['overall']#.squeeze()
+    #     #verts_warped = verts_warped.detach().cpu().numpy()
+    #     verts_warped = verts + verts_warped
+    # else:
+    #     verts_warped = verts.squeeze()
+    #
+    # pts_on_template= output["pts_on_template"].requires_grad_(True)
+    # pred_normal = diff_operators.gradient(decoder.template_sdf(pts_on_template),pts_on_template)
+    # pred_normal = diff_operators.gradient(output['model_out'], output['model_in'])
+    # pred_normal = pred_normal.squeeze().detach().cpu().numpy()
+    # pred_normal = pred_normal / np.linalg.norm(pred_normal, axis=-1, keepdims=True)
+    # pred_normal += 1.
+    # pred_normal /=2
+
+    return output['model_out'].cpu().detach().numpy() #pred_normal
 
 
 def revert_points_to_template_for_one_cov(decoder, lat_vec, attr, savedir, device, which_covariate):

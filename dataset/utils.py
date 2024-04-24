@@ -42,7 +42,7 @@ def read_a_toy_shape(filename, savepath, num_of_samples=2000):
     np.savez(savepath, pts=sampled_points, norms=sampled_norms)
     return #result
 
-#filename = '/Users/jyn/jyn/research/projects/NAISR/toydata/cylinder/cylinder_height_1.0_radius_1.0.stl' #'/Users/jyn/jyn/research/projects/NAISR/toydata/torus/torus_ringradius_10.0_crosssectionradius_5.0.stl'
+#filename = '/Users/jyn/jyn/research/projects/NAISR/publicdata/cylinder/cylinder_height_1.0_radius_1.0.stl' #'/Users/jyn/jyn/research/projects/NAISR/publicdata/torus/torus_ringradius_10.0_crosssectionradius_5.0.stl'
 #savepath = 'cylinder.npz'
 #pts = read_a_toy_shape(filename, savepath)
 

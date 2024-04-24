@@ -33,7 +33,7 @@ def calculate_sdf_from_mesh(surf_mesh):
 
     #points -= np.min(points, axis=0)
     #points = points[sdf<0]
-    #sdf = sdf[sdf<0]
+    #sdf = sdf[sdf<0]o
     '''
     colors = np.zeros(points.shape)
     colors[sdf[:, 0] < 0, 2] = 1

@@ -26,13 +26,17 @@ surface_samples_subdir = "SurfaceSamples"
 normalization_param_subdir = "NormalizationParameters"
 training_meshes_subdir = "TrainingMeshes"
 
-reconstructions_subdir = "Reconstructions_0312"
-transport_subdir = "Tranports"
+reconstructions_subdir = "Reconstructions1"
+template_across_epochs_subdir = "TemplateAcrossEpochs"
+
+
+
+transport_subdir = "TranportsWithCov"
 transport_meshes_subdir = "Meshes"
 transport_codes_subdir = "Codes"
 transport_models_subdir = "Models"
 
-transport_general_subdir = "GeneralTranports"
+transport_general_subdir = "Tranports"
 transport_general_meshes_subdir = "Meshes"
 transport_general_codes_subdir = "Codes"
 transport_general_models_subdir = "Models"
@@ -42,7 +46,7 @@ reconstruction_inv_meshes_subdir = "Meshes"
 reconstruction_inv_codes_subdir = "Codes"
 reconstruction_inv_models_subdir = "Models"
 
-reconstructions_withcov_subdir = "ReconstructionsWithCov_0312"
+reconstructions_withcov_subdir = "ReconstructionsWithCov"
 reconstruction_withcov_meshes_subdir = "Meshes"
 reconstruction_withcov_codes_subdir = "Codes"
 reconstruction_withcov_models_subdir = "Models"

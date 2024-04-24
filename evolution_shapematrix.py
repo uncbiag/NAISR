@@ -22,6 +22,31 @@ from naisr import *
 from visualizer import *
 
 
+dict_list_cov = {}
+dict_list_cov['Airway'] = {'age': np.linspace(-2.0, 2.0, 7), 'weight': np.linspace(4., -2., 7).tolist()}
+dict_list_cov['starman'] = {'cov_1': np.linspace(-1., 1., 7), 'cov_2': np.linspace(1., -1., 7).tolist()}
+dict_list_cov['ADNI'] = {'age': np.linspace(-3.0, 3.0, 7), 'AD': np.linspace(2., -1., 7).tolist()}
+
+# dict_list_cov['Airway'] = {'age': np.linspace(-2.0, 2.0, 7), 'weight': np.linspace(-2., 4., 7).tolist()}
+# dict_list_cov['starman'] = {'cov_1': np.linspace(-1., 1., 7), 'cov_2': np.linspace(1., -1., 7).tolist()}
+# dict_list_cov['ADNI'] = {'age': np.linspace(-3.0, 3.0, 7), 'AD': np.linspace(2., -1., 7).tolist()}
+
+
+
+def extract_latent_vector(latent_vectors, idx):
+    average_latent_code = torch.mean(latent_vectors, dim=-2)[None, None, :]
+    if idx == 'mean':
+        return average_latent_code
+    elif idx == 'zero':
+        return torch.zeros_like(average_latent_code)
+    else:
+        try:
+            return latent_vectors[int(idx)][None, None, :]
+        except:
+            print("Wrong index of latent vectors. Return average latent vector")
+            return average_latent_code
+
+
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser(description="Testing a DeepSDF autodecoder")
@@ -30,7 +55,7 @@ if __name__ == "__main__":
         "--networksetting",
         "-e",
         dest="networksetting",
-        default='examples/pediatric_airway/naivf_deepnaigsr.json',
+        default="examples/hippocampus/naigsr_0920_base.json", #'examples/pediatric_airway/naigsr_0920_nodisentinv.json', #"examples/hippocampus/naigsr_0920_base.json", #"examples/hyperpar_gridsearch/subset.json",#'examples/pediatric_airway/naigsr_0920_nodisentinv.json', #"examples/hippocampus/naigsr_0920_base.json",# 'examples/pediatric_airway/naigsr_0920_nodisentinv.json', #"examples/hippocampus/naigsr_0920_base.json",#"examples/hippocampus/asdf_0919.json",#"examples/hippocampus/naigsr_0920_base.json",#'examples/pediatric_airway/naigsr_0920_nodisentinv.json', #='examples/pediatric_airway/naivf_deepnaigsr.json',
         help="The experiment directory. This directory should include "
              + "experiment specifications in 'specs.json', and logging will be "
              + "done in this directory as well.",
@@ -44,13 +69,21 @@ if __name__ == "__main__":
         help="mlp or siren",
     )
 
+    arg_parser.add_argument(
+        "--checkpoint",
+        "-c",
+        dest="checkpoint",
+        default="latest",
+        help="The checkpoint weights to use. This can be a number indicated an epoch "
+        + "or 'latest' for the latest weights (this is the default)",
+    )
 
     arg_parser.add_argument(
-        "--dim",
-        "-d",
-        dest="dimension",
-        default=3,
-        type=int,
+        "--idx",
+        "-i",
+        dest="index",
+        default='mean',
+        type=str,
         help="shape ellipsoid or torus",
     )
 
@@ -63,11 +96,10 @@ if __name__ == "__main__":
     '''
 
     backbone = args.backbone
-    in_features = int(args.dimension)
     experiment_name = specs["ExperimentName"]
     print(experiment_name)
     template_attributes = specs["TemplateAttributes"]
-    attributes =  specs["Attributes"]
+    attributes = specs["Attributes"]
     split_file = specs["Split"]
     num_samp_per_scene = specs["SamplesPerScene"]
     device = specs['Device']
@@ -80,26 +112,37 @@ if __name__ == "__main__":
     data_source = specs["DataSource"]
 
     # load model
-    latent_vectors = ws.load_latent_vectors(root_path, 'epoch_3000', torch.device(device)).to(device)
-    average_latent_code = torch.mean(latent_vectors[0:2], dim=-2)[None, None, :]
+    latent_vectors = ws.load_latent_vectors(root_path, 'latest', torch.device(device)).to(device)
+    average_latent_code = torch.zeros_like(torch.mean(latent_vectors, dim=-2)[None, None, :])
 
-    training_cases = naisr.get_ids(specs["Split"], split='train')
-    import pandas as pd
-    df_data = pd.read_csv(specs["DataSource"], header=0)
-    #arr_samples_specific, attributes_specific, gt_specific = naisr.get_data_for_id( '1364', df_data, training_cases, specs["Attributes"])
-    #attributes_specific = {key: value.to(device) for key, value in attributes_specific.items()}
-    codes_dir = os.path.join(root_path, ws.reconstructions_subdir, ws.reconstruction_codes_subdir)
-    list_codes = []
-    ''''
-    for i_subj in os.listdir(codes_dir):
-        average_latent_code  = load_transport_vectors(codes_dir, i_subj[0:4], device)
-        average_latent_code.requires_grad = False
-        list_codes.append(average_latent_code)
-    average_latent_code = torch.mean(torch.cat((list_codes), dim=0), dim=0)[None,  :]
-    '''
-    #average_latent_code =  torch.zeros(1, 1, 256).to(device) #torch.mean(torch.cat((list_codes), dim=0), dim=0)[None, :]
 
-    # load model
+    # loading dataset
+    shapetype = specs["Class"]
+    filename_dataset = specs["DataSource"]
+    num_dim = specs["InFeatures"]
+
+    if shapetype == 'Airway':
+        cases = naisr.get_airway_ids(specs["Split"], split='test')
+        training_cases = naisr.get_airway_ids(specs["Split"], split='train')
+        load_one_case = naisr.get_airway_data_for_id
+        df_data = pd.read_csv(filename_dataset)
+        #list_patient_scans = naisr.get_airways_for_transport(specs["DataSource"], specs["Split"], split='test_multiple')
+    elif shapetype == 'starman':
+        cases = naisr.get_starman_ids(filename_dataset, 'test')
+        training_cases = naisr.get_starman_ids(filename_dataset, 'train')
+        load_one_case = naisr.get_starman_data_for_id
+        df_data = pd.read_csv(filename_dataset['test'])
+        #list_patient_scans = naisr.get_starmans_for_transport(specs["DataSource"], split='test')
+    elif shapetype == 'ADNI':
+        cases = naisr.get_adni_ids(specs["Split"], split='test')
+        training_cases = naisr.get_adni_ids(specs["Split"], split='train')
+        load_one_case = naisr.get_adni_data_for_id
+        df_data = pd.read_csv(filename_dataset)
+        #list_patient_scans = naisr.get_adni_for_transport(specs["DataSource"], specs["Split"], split='test_multiple')
+
+
+
+
     model = eval(specs['Network'])(
         template_attributes=specs['TemplateAttributes'],
         in_features=specs['InFeatures'],
@@ -112,28 +155,17 @@ if __name__ == "__main__":
         pos_enc=specs['PosEnc'],
         latent_size=specs["CodeLength"])
 
-    checkpoint_path = os.path.join(root_path, 'checkpoints', 'epoch_3000.pth')
+    checkpoint_path = os.path.join(root_path, ws.model_params_subdir, args.checkpoint + '.pth')
     print(checkpoint_path)
     model.load_state_dict(torch.load(checkpoint_path, map_location= torch.device(device))["model_state_dict"])
     model.to(specs['Device'])
     model.eval()
 
 
-    '''
-    evolution
-    '''
-    '''
-    for age in np.linspace(-1, 1, 5):
-        dict_of_evolution[age] = {}
-        dict_text[age]  = {}
-        dict_color[age]  = {}
 
-        for weight in np.linspace(-1, 1, 5):
-            logging.info("evolving {}{}".format(age, weight))
-            '''
     # evaluate testing
 
-    savepath_evo = os.path.join(root_path, 'ShapeMatrix2')
+    savepath_evo = os.path.join(root_path, 'TemplateShapeMatrix')
     cond_mkdir(savepath_evo)
     savepath_evo_type = os.path.join(savepath_evo, 'average')
     cond_mkdir(savepath_evo_type)
@@ -144,46 +176,66 @@ if __name__ == "__main__":
     figure_name = 'shapematrix2'
     #average_latent_code = torch.mean(latent_vectors[[3, 4]], dim=0)[None, None, :]  # [indices]
 
-    for age in np.linspace(-1., 1., 7):
-        dict_of_evolution[age] = {}
-        dict_text[age]  = {}
-        dict_color[age]  = {}
+    #
+    covariante_names = specs['Attributes'] #[specs['Attributes'][0], specs['Attributes'][1]]
+    for cov_1 in dict_list_cov[shapetype][covariante_names[0]]: #np.linspace(-1., 2., 7):
+        dict_of_evolution[cov_1] = {}
+        dict_text[cov_1] = {}
+        dict_color[cov_1] = {}
 
-        for weight0 in np.linspace(-1., 1., 7):
+        for cov_2 in dict_list_cov[shapetype][covariante_names[1]]:
 
-            weight = -weight0
-            logging.info("evolving {}{}".format(age, weight))
+            #cov_2 = -cov_2
+            logging.info("evolving {}{}".format(cov_1, cov_2))
 
+            attributes = specs["TemplateAttributes"].copy()
+            attributes[covariante_names[0]] = cov_1 #np.array([cov_1])[None, :]
+            attributes[covariante_names[1]] = cov_2 #np.array([cov_2])[None, :]
 
-            attributes = {'weight': np.array([weight])[None, :],'age': np.array([age])[None, :],  'sex': np.array([0])[None, :]}
-            attributes = {key: torch.from_numpy(value).to(device).float()[[0], ...] for key, value in attributes.items()}
+            attributes = {key: torch.from_numpy(np.array([value])[None, :]).to(device).float()[[0], ...] for key, value in attributes.items()}
 
-            savedir = os.path.join(savepath_evo_type, 'age_' + str(age) + '_weight_' + str(weight))
+            savedir = os.path.join(savepath_evo_type, 'cov1_' + str(cov_1) + '_cov2_' + str(cov_2))
             cond_mkdir(savedir)
-            savepath = naisr_meshing.create_mesh_3dairway_reconstruction(model,
-                                                                    average_latent_code,
-                                                                    attributes,
-                                                                    {},
-                                                                    savedir,
-                                                                    output_type='model_out',
-                                                                    N=256,
-                                                                    device=specs['Device'],
-                                                                    EVALUATE=False)
-            '''
-            current_color = naisr_meshing.revert_points_to_template(model,
-                                                                    average_latent_code,
-                                                                    attributes,
-                                                                    savedir,
-                                                                    device)
+            savepath = naisr_meshing.create_mesh_reconstruction(shapetype)(model,
+                                                                average_latent_code,
+                                                                attributes,
+                                                                           {},
+                                                                savedir,
+                                                                output_type='model_out',
+                                                                dim=num_dim,
+                                                                shapetype=shapetype,
+                                                                N=256,
+                                                                device=specs['Device'],
+                                                                EVALUATE=False,
+                                                                MAKE_GT=False,
+                                                                MAKE_TEMPLATE=True)
+            #
+            # current_color = naisr_meshing.revert_points_to_template(model,
+            #                                                         average_latent_code,
+            #                                                         attributes,
+            #                                                         savedir,
+            #                                                         device)
 
-            '''
-            dict_of_evolution[age][weight] = os.path.join(savedir, 'surface.stl')
-            #dict_color[age][weight] = current_color
-            dict_text[age][weight] = attributes
 
-            plotter_evolution_shapematrix(dict_of_evolution,
+            # current_color = naisr_meshing.calculate_normal_map(shapetype,model,
+            #                                                         average_latent_code,
+            #                                                         attributes,
+            #                                                         savedir,
+            #                                                         device)
+
+
+            if shapetype == 'starman':
+                dict_of_evolution[cov_1][cov_2] = savepath #os.path.join(savedir, 'surface.vtk')
+
+            else:
+                dict_of_evolution[cov_1][cov_2] = savepath #os.path.join(savedir, 'surface.stl')
+            #dict_color[cov_1][cov_2] = current_color
+            dict_text[cov_1][cov_2] = attributes
+
+            plotter_evolution_shapematrix(shapetype)(dict_of_evolution,
                                       savepath_evo_type,
-                                      dict_text0=dict_text,dict_colors0=None)
+                                      dict_text0=dict_text,
+                                      dict_colors0=None)
                                       #dict_colors0=dict_color)
 
 

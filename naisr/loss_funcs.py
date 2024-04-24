@@ -451,18 +451,24 @@ def loss_pointcloud_sdf(model_output, gt, batch_vecs, epoch, dict_losses={}):
        x: batch of input coordinates
        y: usually the output of the trial_soln function
        '''
-    whether_small_mean_deform = dict_losses['whether_small_mean_deform'] if 'whether_small_mean_deform' in dict_losses.keys() else False
-    whether_small_ind_deform=  dict_losses['whether_small_ind_deform'] if 'whether_small_ind_deform' in dict_losses.keys() else False
+
+    whether_sdf = dict_losses['whether_sdf'] if 'whether_sdf' in dict_losses.keys() else False
+    whether_normal_constraint = dict_losses['whether_normal_constraint'] if 'whether_normal_constraint' in dict_losses.keys() else False
+    whether_inter_constraint= dict_losses['whether_inter_constraint'] if 'whether_inter_constraint' in dict_losses.keys() else False
+
     whether_eikonal = dict_losses['whether_eikonal'] if 'whether_eikonal' in dict_losses.keys() else False
-    whether_vec =  dict_losses['whether_vec'] if 'whether_vec' in dict_losses.keys() else False
-    whether_jacobian = dict_losses['whether_jacobian'] if 'whether_jacobian' in dict_losses.keys() else False
-    whether_hyperelastic = dict_losses['whether_hyperelastic'] if 'whether_hyperelastic' in dict_losses.keys() else False
-    whether_bendingenergy = dict_losses['whether_bendingenergy'] if 'whether_bendingenergy' in dict_losses.keys() else False
     whether_code_regularization = dict_losses['whether_code_regularization'] if 'whether_code_regularization' in dict_losses.keys() else False
-    whether_vad = dict_losses['whether_vad'] if 'whether_vad' in dict_losses.keys() else False
-    whether_disentangle = dict_losses['whether_disentangle'] if 'whether_disentangle' in dict_losses.keys() else False
+
     whether_inv= dict_losses['whether_inv'] if 'whether_inv' in dict_losses.keys() else False
-    whether_inv_l2= dict_losses['whether_inv_l2'] if 'whether_inv_l2' in dict_losses.keys() else False
+    whether_grad_inv_sampling = dict_losses['whether_grad_inv_sampling'] if 'whether_grad_inv_sampling' in dict_losses.keys() else False
+    whether_icon = dict_losses['whether_icon'] if 'whether_icon' in dict_losses.keys() else False
+
+    coeff_sdf = dict_losses["coeff_sdf"] if "coeff_sdf" in dict_losses.keys() else 1.
+    coeff_inter_constraint = dict_losses["coeff_inter_constraint"] if "coeff_inter_constraint" in dict_losses.keys() else 1.
+    coeff_normal_constraint = dict_losses["coeff_normal_constraint"] if "coeff_normal_constraint" in dict_losses.keys() else 1.
+    coeff_eik = dict_losses["coeff_eik"] if "coeff_eik" in dict_losses.keys() else 1.
+    coeff_latent_z = dict_losses["coeff_latent_z"] if "coeff_latent_z" in dict_losses.keys() else 1.
+
 
     '''
     get ground-truth of template and target shapes
@@ -489,227 +495,264 @@ def loss_pointcloud_sdf(model_output, gt, batch_vecs, epoch, dict_losses={}):
     1. SDF for target shape
     '''
     l1_loss = torch.nn.L1Loss(reduction="mean")
-    gradient = diff_operators.gradient(pred_sdf, model_input)[:, :, 0:(coords.shape[-1])] #-1)]
-    #sdf_constraint_target = l1_loss(pred_sdf[:, pred_sdf.shape[1]//6::, :], gt_sdf[:, pred_sdf.shape[1]//6::, :])  #torch.where(gt_sdf > -9, torch.abs(pred_sdf - gt_sdf), torch.zeros_like(pred_sdf))
-    sdf_constraint_target = l1_loss(pred_sdf[torch.abs(gt_sdf)<1e-3], gt_sdf[torch.abs(gt_sdf)<1e-3])  # torch.where(gt_sdf > -9, torch.abs(pred_sdf - gt_sdf), torch.zeros_like(pred_sdf))
-
-    normal_constraint = ( 1 - F.cosine_similarity(gradient, gt_normals, dim=-1)[..., None])[torch.abs(gt_sdf[:,:,0])<1e-3, :]
-
+    gradient_of_sdf = diff_operators.gradient(pred_sdf, model_input)[:, :, 0:(coords.shape[-1])] #-1)]
+    sdf_constraint_target = l1_loss(pred_sdf[torch.abs(gt_sdf)<1e-3], gt_sdf[torch.abs(gt_sdf)<1e-3])
+    normal_constraint = ( 1 - F.cosine_similarity(gradient_of_sdf, gt_normals, dim=-1)[..., None])[torch.sum(gt_normals.abs(), dim=-1)>1e-3, :]
     inter_constraint = l1_loss(pred_sdf[torch.abs(gt_sdf) >1e-3], gt_sdf[torch.abs(gt_sdf) > 1e-3])
+
+    '''
     # -----------------
     losses = {'sdf': sdf_constraint_target * 3e2,
               'normal_constraint': normal_constraint.mean() * 1e2,
               'inter_constraint': inter_constraint.mean() * 1e3,
               #'neg_constraint': neg_constraint.mean() * 1e1
               }
+    '''
+
+    losses = {}
+    # if whether_sdf:
+    #     losses.update({'sdf': sdf_constraint_target * 3e2})
+    # if whether_normal_constraint:
+    #     losses.update({'normal_constraint': normal_constraint.mean() * 1e2})
+    # if whether_inter_constraint:
+    #     losses.update({'inter_constraint': inter_constraint.mean() * 1e3})
+    if whether_sdf:
+        losses.update({'sdf': sdf_constraint_target * 3e1 * coeff_sdf})
+    if whether_normal_constraint:
+        losses.update({'normal_constraint': normal_constraint.mean() * 1e1 * coeff_normal_constraint})
+    if whether_inter_constraint:
+        losses.update({'inter_constraint': inter_constraint.mean() * 1e2 * coeff_inter_constraint})
+
+
 
     if whether_code_regularization:
-        l2_size_loss = torch.sum(torch.norm(batch_vecs, dim=-1)**2) / batch_vecs.shape[-1]
-        reg_loss = (1e-4 * min(1, epoch / 100) * l2_size_loss * 1e4
+        l2_size_loss = torch.sum(batch_vecs**2) / batch_vecs.shape[-1]
+        reg_loss = ( min(1, epoch / 100) * l2_size_loss * 1e4
                    ) / pred_sdf.shape[0] / pred_sdf.shape[1]*2
-        losses.update({'code_reg': reg_loss})
+        losses.update({'code_reg': reg_loss * coeff_latent_z})
 
     if whether_eikonal:
         '''
         4. Vector Field constraint: Eikonal Constraint
         '''
         # PDE constraints
-        def eikonal_constraint(gradient):
+        def eikonal_constraint(gradient_of_sdf_):
             l1_eik = torch.nn.L1Loss(reduction='mean')
-            gradient_norm = gradient.norm(dim=-1)
+            gradient_norm = gradient_of_sdf_.norm(dim=-1)
             return l1_eik(gradient_norm, torch.ones_like(gradient_norm).float()) #(gradient.norm(dim=-1) - 1).norm(dim=-1) #(gradient.norm(dim=-1) - 1.) ** 2
 
         eikonal_loss = {}
         #gradient = diff_operators.gradient(pred_sdf, model_input)[:, :, 0:(coords.shape[-1])] #-1)]
-        eikonal_loss['eikonal'] = eikonal_constraint(gradient)  * 1e2
+        #eikonal_loss['eikonal'] = eikonal_constraint(gradient)  * 1e2
+        eikonal_loss['eikonal'] = eikonal_constraint(gradient_of_sdf) * 1e1 * coeff_eik
         losses.update(eikonal_loss )
 
-    #if whether_vad:
-    #    z_var = torch.full_like(batch_vecs, args['log_var'])
-    #    kl_loss = 0.5 * torch.sum(torch.exp(z_var) + latents[idxes] ** 2 - 1. - z_var) / batch_size
-    #    total_loss = loss + args['ratio_kl'] * kl_loss
-
-    if whether_jacobian:
-        '''
-        4. Vector Field constraint: Jacobian Regularity
-        '''
-        pred_vect_fields = model_output['vec_fields']
-        velocity_jacobian_constraint = {}
-
-        for i_key in pred_vect_fields.keys():
-            if '_templ' not in i_key:
-                current_constraint = compute_jacobian_loss(coords, pred_vect_fields[i_key], batch_size=coords.shape[0])
-                velocity_jacobian_constraint['jacobian_' + i_key] = current_constraint
-        losses.update(velocity_jacobian_constraint)
-
-    if whether_vec:
-        '''
-        5. Vector Field constraint: Velocity Constraint
-        '''
-
-        def velocity_field_constraint(predicted_sdf, coords):
-            velocity = diff_operators.gradient(predicted_sdf, coords)** 2
-            velocity_field_constraint = torch.sum(velocity, dim=-1)
-            # vec = diff_operators.laplace(predicted_sdf, coords)[:, :, 0:dim]
-            return velocity_field_constraint
-
-        pred_vec_fields = model_output['vec_fields']
-        names = pred_vec_fields.keys()
-        velocity_vec_constraint = {}
-        velocity_cov_constraint = {}
-        velocity_embd_constraint = {}
-
-        for name, arr_vf in pred_vec_fields.items():
-
-            if  'overall' not in name and ('padding' not in name):
-                current_constraint_vec = 0
-
-                for i in range(arr_vf.shape[-1]):
-                    current_constraint_vec += velocity_field_constraint(arr_vf[..., i], model_input)
-                velocity_vec_constraint['gradient_vec_' + name] = current_constraint_vec[torch.abs(gt_sdf[:,:,0])>0.1, :]* 1e1
-                #velocity_cov_constraint['gradient_' + name] = current_constraint_cov
-
-        '''
-        current_constraint_cov = 0
-        for i in range(3):
-            current_constraint_cov += velocity_field_constraint(pred_vec_fields['overall'], model_output['covaraites'])
-        velocity_cov_constraint['gradient_cov_overall'] = current_constraint_cov[:, pred_sdf.shape[1]//6::]
-        '''
-        '''
-        current_constraint_vec_embd = 0
-        for i in range(3):
-            current_constraint_vec_embd  += torch.abs(diff_operators.gradient(pred_vec_fields['overall'][..., i], model_output['embedding']))
-            #current_constraint_embd += velocity_field_constraint(pred_vec_fields['overall'], model_output['covaraites'])
-        current_constraint_sdf_embd = torch.abs(diff_operators.gradient(pred_sdf ,model_output['embedding']))
-
-        velocity_embd_constraint['vec_gradient_embd_overall'] = current_constraint_vec_embd[:, pred_sdf.shape[1] // 4::] * 1e2
-        velocity_embd_constraint['sdf_gradient_embd_overall'] = current_constraint_sdf_embd[:, pred_sdf.shape[1] // 4::] * 1e2
-        '''
-        losses.update(velocity_vec_constraint)
-        #losses.update(velocity_embd_constraint)
-        #losses.update(velocity_cov_constraint)
-        '''
-        dict_vec_field = model_output['vec_fields']
-        dict_loss_vf = {}
-        for name, arr_pred in dict_vec_field.items():
-            if ('c_padding' in name) and ('overall' not in name):
-                dict_loss_vf['c_padding_' + name] = (arr_pred.norm(dim=-1)**2).mean()
-        losses.update(dict_loss_vf)
-        '''
-        #velocity_cov_constraint = torch.mean(torch.sum(diff_operators.gradient(pred_vec_fields['v'], model_output['covaraites'])**2, dim=-1))
-        #losses.update({'velocity_cov_constraint': velocity_cov_constraint*1e2,})
-
-
-
-    if whether_vad:
-        batch_vecs_mean = batch_vecs['mean']
-        batch_vecs_log_var = batch_vecs['log_var']
-        kl_loss = -0.5 * torch.sum(-torch.exp(batch_vecs_log_var) - batch_vecs_mean ** 2 + 1. +batch_vecs_log_var)
-        kl_loss /= batch_vecs_mean.shape[0]
-        kl_loss /= batch_vecs_mean.shape[1]
-        losses.update({'kl_loss': kl_loss * 0.1})
-
-    if whether_small_ind_deform:
-        '''
-        3. Vector Field constraint: boundary condition
-        '''
-
-        dict_vec_field = model_output['vec_fields']
-        dict_loss_vf = {}
-        for name, arr_pred in dict_vec_field.items():
-            if ('padding' not in name) and ('overall' not in name):
-                dict_loss_vf['vf_size_' + name] = (arr_pred.norm(dim=-1)**2).mean() #* 1e2
-        losses.update(dict_loss_vf)
-
-    if whether_small_mean_deform:
-        '''
-        3. Vector Field constraint: boundary condition
-        '''
-        dict_vec_field = model_output['vec_fields']
-        dict_loss_vf = {}
-        for name, arr_pred in dict_vec_field.items():
-            if ('padding' not in dict_vec_field):
-                dict_loss_vf[name] = arr_pred.norm(dim=-1).mean() #* 1e1
-        losses.update(dict_loss_vf)
-
-
-
-    if whether_disentangle:
-        pred_sdf_z_padding = model_output['model_out_z_padding']
-        l1_loss = torch.nn.L1Loss(reduction="mean")
-        gradient_z_padding = diff_operators.gradient(pred_sdf_z_padding, model_input)[:, :, 0:(coords.shape[-1])]  # -1)]
-        sdf_constraint_z_padding = l1_loss(pred_sdf_z_padding[torch.abs(gt_sdf)<1e-3], gt_sdf[torch.abs(gt_sdf)<1e-3])  # torch.where(gt_sdf > -9, torch.abs(pred_sdf - gt_sdf), torch.zeros_like(pred_sdf))
-        normal_constraint_z_padding = (1 - F.cosine_similarity(gradient_z_padding, gt_normals, dim=-1)[..., None])[torch.abs(gt_sdf[:,:,0])<1e-3, :]
-        inter_constraint_z_padding = l1_loss(pred_sdf_z_padding[torch.abs(gt_sdf)> 1e-3], gt_sdf[torch.abs(gt_sdf)> 1e-3])
-        losses.update({'sdf_z_padding': sdf_constraint_z_padding * 3e2,
-                       'normal_constraint_z_padding': normal_constraint_z_padding.mean() * 1e2,
-                       'inter_constraint_z_padding': inter_constraint_z_padding.mean() * 1e3,
-                      })
-        losses.update({'eikonal_z_padding': eikonal_constraint(gradient_z_padding) *1e2})
-        '''
-        pred_disentangle = model_output['disentangle']
-        loss_per_co = {}
-        
-        for name, value in pred_disentangle.items():
-            loss_per_co['sdf_disentangle_' + name] = l1_loss(value[gt_sdf<0.05], gt_sdf[gt_sdf<0.05]).mean() * 3e1
-            loss_per_co['intercon_' + name] =  torch.relu(0.05 - value[gt_sdf > 0.05])
-            #gradient_per_co = diff_operators.gradient(model_output['disentangle'][name], model_input)[:, :, 0:(coords.shape[-1])]  # -1)]
-        
-            #loss_per_co['normvec_disentangle_' + name] = (1 - F.cosine_similarity(gradient_per_co, gt_normals, dim=-1)[..., None])[ :, pred_sdf.shape[1] // 2::, :]
-            #loss_per_co['eik_'] += eikonal_constraint(gradient_per_co[:, pred_sdf.shape[1] // 2::, :])
-        losses.update(loss_per_co)
-        '''
 
 
     if whether_inv:
         '''
         5. inv
         '''
-        '''
-        def gradient(disp, time):
-            list_of_gradients_xyz = []
-            for i in range(disp.shape[-1]):
-                velocity = diff_operators.gradient(disp[..., i], time)
-                list_of_gradients_xyz.append(velocity)
-            return list_of_gradients_xyz
-        '''
-
 
         pred_vec_fields = model_output['vec_fields']
         velocity_vec_constraint = {}
-        l1_loss =torch.nn.L1Loss() # torch.nn.MSELoss() #torch.nn.L1Loss()
         for name, arr_vf in pred_vec_fields.items():
-            if '_inv' in name:
-                current = l1_loss(pred_vec_fields[name][torch.abs(gt_sdf[:,:,0])<0.01, :], -pred_vec_fields[name[0:-4]][torch.abs(gt_sdf[:,:,0])<0.01, :])
-                #current = (1 - F.cosine_similarity(pred_vec_fields[name][torch.abs(gt_sdf[:,:,0])<0.01, :], pred_vec_fields[name[0:-4]][torch.abs(gt_sdf[:,:,0])<0.01, :], dim=-1)[..., None]).mean()
-
-                velocity_vec_constraint['disp_' + name] = current * 10
+            if '_inv' in name and ('sampling' not in name):
+                current = (pred_vec_fields[name]+pred_vec_fields[name[0:-4]])**2
+                velocity_vec_constraint['disp_' + name] = current.mean() * 100
         losses.update(velocity_vec_constraint)
 
-        '''
-        for name, arr_vf in pred_vec_fields.items():
-            if '_inv' in name:
-                gradient(arr_vf, )
-                current = l1_loss(pred_vec_fields[name][torch.abs(gt_sdf[:,:,0])<0.01, :], -pred_vec_fields[name[0:-4]][torch.abs(gt_sdf[:,:,0])<0.01, :])
-                velocity_vec_constraint['v' + name] = current*10
-        losses.update(velocity_vec_constraint)
-        '''
 
-    if whether_inv_l2:
+    if whether_grad_inv_sampling:
         '''
         5. inv
         '''
+
+        def compute_jacobian_matrix_of_deformation(input_coords, output):
+            """Compute the Jacobian matrix of the output wrt the input."""
+            jacobian_matrix = torch.zeros(input_coords.shape[0], input_coords.shape[1], output.shape[-1],
+                                          output.shape[-1], device=input_coords.device)
+            for i in range(output.shape[-1]):
+                jacobian_matrix[:, :, i, :] = gradient(input_coords, output[..., i])[..., 0:output.shape[-1]]
+                #jacobian_matrix[..., i, i] -= torch.ones_like(jacobian_matrix[..., i, i])
+            return jacobian_matrix
+
+
         pred_vec_fields = model_output['vec_fields']
         velocity_vec_constraint = {}
         for name, arr_vf in pred_vec_fields.items():
-            if '_inv' in name:
-                current = torch.norm(pred_vec_fields[name][torch.abs(gt_sdf[:,:,0])<0.01, :] + pred_vec_fields[name[0:-4]][torch.abs(gt_sdf[:,:,0])<0.01, :], dim=-1).mean()
-                #current = (1 - F.cosine_similarity(pred_vec_fields[name][torch.abs(gt_sdf[:,:,0])<0.01, :], pred_vec_fields[name[0:-4]][torch.abs(gt_sdf[:,:,0])<0.01, :], dim=-1)[..., None]).mean()
+            if 'sampled_inv_forward' in name:
+                current_jacobian_m = compute_jacobian_matrix_of_deformation(model_input, model_input + arr_vf + pred_vec_fields[name[0:-8] + '_backward'])[torch.abs(gt_sdf[:,:,0])<0.01, :]
+                current_loss = (torch.norm(current_jacobian_m - torch.eye(current_jacobian_m.shape[-1], device=current_jacobian_m.device), p="fro", dim=[-1, -2])**2).mean()
+                velocity_vec_constraint['disp_' + name] = current_loss * 1000
 
+        losses.update(velocity_vec_constraint)
+
+    if whether_grad_inv_sampling:
+        '''
+        5. inv
+        '''
+
+        def compute_jacobian_matrix_of_deformation(input_coords, output):
+            """Compute the Jacobian matrix of the output wrt the input."""
+            jacobian_matrix = torch.zeros(input_coords.shape[0], input_coords.shape[1], output.shape[-1],
+                                          output.shape[-1], device=input_coords.device)
+            for i in range(output.shape[-1]):
+                jacobian_matrix[:, :, i, :] = gradient(input_coords, output[..., i])[..., 0:output.shape[-1]]
+                #jacobian_matrix[..., i, i] -= torch.ones_like(jacobian_matrix[..., i, i])
+            return jacobian_matrix
+
+
+        pred_vec_fields = model_output['vec_fields']
+        velocity_vec_constraint = {}
+        for name, arr_vf in pred_vec_fields.items():
+            if 'sampled_inv_forward' in name:
+                current_jacobian_m = compute_jacobian_matrix_of_deformation(model_input, model_input + arr_vf + pred_vec_fields[name[0:-8] + '_backward'])[torch.abs(gt_sdf[:,:,0])<0.01, :]
+                current_loss = (torch.norm(current_jacobian_m - torch.eye(current_jacobian_m.shape[-1], device=current_jacobian_m.device), p="fro", dim=[-1, -2])**2).mean()
+                velocity_vec_constraint['disp_' + name] = current_loss * 1000
+
+        losses.update(velocity_vec_constraint)
+
+
+    if whether_icon:
+
+        '''
+        get predicted data
+        '''
+        pred_sdf_aug = model_output['model_out_aug']  # predicted sdf value of target shape
+
+        '''
+        1. SDF for target shape
+        '''
+        l1_loss = torch.nn.L1Loss(reduction="mean")
+        gradient_of_sdf_aug = diff_operators.gradient(pred_sdf_aug, model_input)[:, :, 0:(coords.shape[-1])]
+        sdf_constraint_target_aug = l1_loss(pred_sdf_aug[torch.abs(gt_sdf) < 1e-3], gt_sdf[torch.abs(gt_sdf) < 1e-3])
+
+        normal_constraint_aug = (1 - F.cosine_similarity(gradient_of_sdf_aug, gt_normals, dim=-1)[..., None])[
+                            torch.sum(gt_normals.abs(), dim=-1) > 1e-3, :]
+
+        inter_constraint_aug = l1_loss(pred_sdf_aug[torch.abs(gt_sdf) > 1e-3], gt_sdf[torch.abs(gt_sdf) > 1e-3])
+
+        if whether_sdf:
+            losses.update({'sdf_aug': sdf_constraint_target_aug * 3e2})
+        if whether_normal_constraint:
+            losses.update({'normal_constraint_aug': normal_constraint_aug.mean() * 1e2})
+        if whether_inter_constraint:
+            losses.update({'inter_constraint_aug': inter_constraint_aug.mean() * 1e3})
+
+
+        # PDE constraints
+        def eikonal_constraint(gradient_of_sdf_):
+            l1_eik = torch.nn.L1Loss(reduction='mean')
+            gradient_norm = gradient_of_sdf_.norm(dim=-1)
+            return l1_eik(gradient_norm, torch.ones_like(gradient_norm).float()) #(gradient.norm(dim=-1) - 1).norm(dim=-1) #(gradient.norm(dim=-1) - 1.) ** 2
+
+        eikonal_loss_aug = {}
+        eikonal_loss_aug['eikonal_aug'] = eikonal_constraint(gradient_of_sdf_aug) * 1e2
+        losses.update(eikonal_loss_aug)
+
+    return losses
+
+
+def loss_s2m_sdf(model_output, gt, batch_vecs, epoch, dict_losses={}):
+    '''
+       x: batch of input coordinates
+       y: usually the output of the trial_soln function
+       '''
+
+    whether_sdf = dict_losses['whether_sdf'] if 'whether_sdf' in dict_losses.keys() else False
+    whether_eikonal = dict_losses['whether_eikonal'] if 'whether_eikonal' in dict_losses.keys() else False
+    whether_code_regularization = dict_losses[
+        'whether_code_regularization'] if 'whether_code_regularization' in dict_losses.keys() else False
+    whether_disentangle = dict_losses['whether_disentangle'] if 'whether_disentangle' in dict_losses.keys() else False
+    whether_inv = dict_losses['whether_inv'] if 'whether_inv' in dict_losses.keys() else False
+
+
+    '''
+    get ground-truth of template and target shapes
+    '''
+    gt_sdf = gt['sdf']
+
+    '''
+    get input of the network, which is 3D coordinates with covariates
+    '''
+    if 'all_input' in model_output.keys():
+        model_input = model_output['all_input']  # 3D coordinates with covariates
+    else:
+        model_input = model_output['model_in']  # 3D coordinates
+    coords = model_output['model_in']
+
+    '''
+    get predicted data
+    '''
+    pred_sdf = model_output['model_out']  # predicted sdf value of target shape
+
+    '''
+    1. SDF for target shape
+    '''
+    #gradient = diff_operators.gradient(pred_sdf, model_input)[:, :, 0:(coords.shape[-1])]  # -1)]
+
+    l1_loss = torch.nn.L1Loss(reduction="mean")
+    #sdf_constraint_target = l1_loss(pred_sdf.squeeze(), gt_sdf.squeeze())
+
+    sdf_constraint_target = l1_loss(pred_sdf[torch.abs(gt_sdf)<2e-2], torch.zeros_like(gt_sdf[torch.abs(gt_sdf)<2e-2]))  # torch.where(gt_sdf > -9, torch.abs(pred_sdf - gt_sdf), torch.zeros_like(pred_sdf))
+    inter_constraint = l1_loss(pred_sdf[torch.abs(gt_sdf) >2e-2], gt_sdf[torch.abs(gt_sdf) > 2e-2])
+
+    #normal_constraint = ( 1 - F.cosine_similarity(gradient, gt_normals, dim=-1)[..., None])[torch.abs(gt_sdf[:,:,0])<1e-3, :]
+
+
+
+    losses = {}
+    if whether_sdf:
+        losses.update({'sdf': sdf_constraint_target*3e2,
+                       'inter_constraint': inter_constraint*1e3})
+
+    if whether_code_regularization:
+        l2_size_loss = torch.sum(torch.norm(batch_vecs, dim=-1) ** 2) / batch_vecs.shape[-1]
+        reg_loss = (1e-4 * min(1, epoch / 100) * l2_size_loss * 1e4
+                    ) / pred_sdf.shape[0] / pred_sdf.shape[1] * 2
+        losses.update({'code_reg': reg_loss})
+
+    if whether_eikonal:
+        '''
+        4. Vector Field constraint: Eikonal Constraint
+        '''
+        gradient_of_sdf = diff_operators.gradient(pred_sdf, model_input)[:, :, 0:(coords.shape[-1])]  # -1)]
+        # PDE constraints
+        def eikonal_constraint(gradient):
+            l1_eik = torch.nn.L1Loss(reduction='mean')
+            gradient_norm = gradient.norm(dim=-1)
+            return l1_eik(gradient_norm, torch.ones_like(gradient_norm).float())
+        eikonal_loss = {}
+        eikonal_loss['eikonal'] = eikonal_constraint(gradient_of_sdf)*1e2
+        losses.update(eikonal_loss)
+
+    if whether_disentangle:
+        pred_sdf_z_padding = model_output['model_out_z_padding']
+        l1_loss = torch.nn.L1Loss(reduction="mean")
+        gradient_z_padding = diff_operators.gradient(pred_sdf_z_padding, model_input)[:, :,
+                             0:(coords.shape[-1])]  # -1)]
+        sdf_constraint_z_padding = l1_loss(pred_sdf_z_padding[torch.abs(gt_sdf) < 1e-3], gt_sdf[torch.abs(
+            gt_sdf) < 1e-3])
+        if whether_sdf:
+            losses.update({'sdf_z_padding': sdf_constraint_z_padding * 3e2})
+        if whether_eikonal:
+            losses.update({'eikonal_z_padding': eikonal_constraint(gradient_z_padding) * 1e2})
+
+
+    if whether_inv:
+        pred_vec_fields = model_output['vec_fields']
+        velocity_vec_constraint = {}
+        l1_loss = torch.nn.L1Loss()  # torch.nn.MSELoss() #torch.nn.L1Loss()
+        for name, arr_vf in pred_vec_fields.items():
+            if '_inv' in name:
+                current = l1_loss(pred_vec_fields[name][torch.abs(gt_sdf[:, :, 0]) < 0.01, :],
+                                  -pred_vec_fields[name[0:-4]][torch.abs(gt_sdf[:, :, 0]) < 0.01, :])
                 velocity_vec_constraint['disp_' + name] = current * 10
         losses.update(velocity_vec_constraint)
 
     return losses
+
 
 
 def loss_pointcloud_puresdf(model_output, gt, batch_vecs, epoch, dict_losses={}):

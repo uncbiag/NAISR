@@ -130,8 +130,8 @@ def make_displacement(arr_sdf_2d, vecter_field, plotname):
         ax.add_collection(LineCollection(segs1,  **kwargs))
         ax.add_collection(LineCollection(segs2, **kwargs))
         ax.autoscale()
-        ax.set_xlim(-1, 1)
-        ax.set_ylim(-1, 1)
+        ax.set_xlim(-2, 2)
+        ax.set_ylim(-2, 2)
 
 
     def plot_shape(ax, arr_sdf_2d, vecter_field, plotname):
@@ -337,8 +337,54 @@ def write_dsp_summary(model, model_input, lat_vecs, attributes, gt, model_output
                 writer.add_figure(prefix + 'xy_sdf_slice_displm_for_' + str(ith_attri), fig, global_step=total_steps)
 
 
-
 def write_deepsdf_dsp_summary(model, model_input, lat_vecs, attributes, gt, model_output, writer, total_steps, prefix='train_', device='cpu'):
+    dim = model_input.shape[-1]
+    if dim  == 3:
+        write_deepsdf_3d_dsp_summary(model, lat_vecs, attributes, gt, model_output, writer, total_steps,
+                                     prefix=prefix, device=device)
+    elif dim == 2:
+        write_deepsdf_2d_dsp_summary(model, lat_vecs, attributes, gt, model_output, writer, total_steps,
+                                     prefix=prefix, device=device)
+    else:
+        print("Incorrect dom of input for tensorboard!")
+
+
+def write_deepsdf_2d_dsp_summary(model,  lat_vecs, attributes, gt, model_output, writer, total_steps, prefix='train_', device='cpu'):
+
+    slice_coords_2d = dataio.get_mgrid(128)
+
+    #with torch.no_grad():
+    model.eval()
+
+    xy_slice_coords = slice_coords_2d #torch.cat((torch.zeros_like(slice_coords_2d[:, :1]), slice_coords_2d), dim=-1)
+    xy_slice_model_input = xy_slice_coords.to(device)[None, ...]
+
+    fixed_attributes = {}
+    for ith_attri in attributes.keys():
+        fixed_attributes[ith_attri] = attributes[ith_attri][[0]]#[None, :]
+    lat_vec_subset = lat_vecs[0, [0], :].repeat(xy_slice_model_input.shape[1], 1).to(device)[None, :, :]
+    xy_model_out = model(xy_slice_model_input, fixed_attributes, lat_vec_subset, )
+
+    if 'vec_fields' in xy_model_out.keys():
+        maps = xy_model_out['vec_fields']
+        for ith_attri in maps.keys():
+            sdf_values = xy_model_out['template'].detach() #yz_model_out['model_map'][ith_attri].detach()
+            sdf_values = dataio.lin2img(sdf_values).squeeze().cpu().numpy()
+            fig = make_displacement(sdf_values, maps[ith_attri], fixed_attributes)
+            #writer.add_figure(prefix + 'yz_sdf_slice_attr_map_for_' + str(ith_attri), fig, global_step=total_steps)
+            writer.add_figure(prefix + 'xy_sdf_slice_displm_for_' + str(ith_attri), fig, global_step=total_steps)
+            if 'overall' in ith_attri:
+                sdf_values = xy_model_out['template'].detach() #yz_model_out['model_out'].detach()
+                sdf_values = dataio.lin2img(sdf_values).squeeze().cpu().numpy()
+                fig = make_displacement(sdf_values, maps[ith_attri], fixed_attributes)
+                # writer.add_figure(prefix + 'yz_sdf_slice_attr_map_for_' + str(ith_attri), fig, global_step=total_steps)
+                writer.add_figure(prefix + 'xy_sdf_slice_displm_for_' + str(ith_attri), fig, global_step=total_steps)
+
+
+    return
+
+
+def write_deepsdf_3d_dsp_summary(model, lat_vecs, attributes, gt, model_output, writer, total_steps, prefix='train_', device='cpu'):
 
     slice_coords_2d = dataio.get_mgrid(128)
 
@@ -598,10 +644,17 @@ def create_mesh_from_implicit_shape(model, attributes, output_type, N, dim, devi
 
 
 def create_mesh_from_deepsdf(model, attributes, lat_vec, output_type, N, dim, device):
+    if dim == 3:
+        return create_mesh_from_3d_deepsdf(model, attributes, lat_vec, output_type, N, device)
+    elif dim == 2:
+        return create_mesh_from_2d_deepsdf(model, attributes, lat_vec, output_type, N, device)
+
+
+def create_mesh_from_3d_deepsdf(model, attributes, lat_vec, output_type, N, device):
     model.eval()
     head = 0
     num_samples = N ** 3
-    max_batch = 16 ** dim
+    max_batch = 16 ** 3
 
     # NOTE: the voxel_origin is actually the (bottom, left, down) corner, not the middle
     voxel_origin = np.array([-1., -1., -1.]) * 2
@@ -626,7 +679,7 @@ def create_mesh_from_deepsdf(model, attributes, lat_vec, output_type, N, dim, de
 
     while head < num_samples:
         #print(head)
-        sample_subset = samples[head : min(head + max_batch, num_samples), 0:dim].to(device)
+        sample_subset = samples[head : min(head + max_batch, num_samples), 0:3].to(device)
         if type(lat_vec) == dict:
             lat_vec_subset = {}
             for name, value in lat_vec.items():
@@ -634,7 +687,7 @@ def create_mesh_from_deepsdf(model, attributes, lat_vec, output_type, N, dim, de
         else:
             lat_vec_subset  = lat_vec[0, [0], :].repeat(sample_subset.shape[0], 1).to(device)[None, :, :]
         samples[head : min(head + max_batch, num_samples), -1] = (
-            model(sample_subset[None, :, range(dim)], attributes, lat_vec_subset)[output_type]
+            model(sample_subset[None, :, range(3)], attributes, lat_vec_subset)[output_type]
             .squeeze()#.squeeze(1)
             .detach()
             .cpu()
@@ -642,10 +695,8 @@ def create_mesh_from_deepsdf(model, attributes, lat_vec, output_type, N, dim, de
         head += max_batch
 
     sdf_values = samples[:, -1]
-    if dim == 3:
-        sdf_values = sdf_values.reshape(N, N, N)
-    else:
-        sdf_values = sdf_values.reshape(N, N)[None, :, :]
+    sdf_values = sdf_values.reshape(N, N, N)
+
     volume = sdf_values.detach().cpu().numpy()
     verts, faces, normals, values = np.zeros((1, 3)), np.zeros((0, 3)), np.zeros((0, 3)), np.zeros(0)
     import skimage.measure as measure
@@ -658,6 +709,66 @@ def create_mesh_from_deepsdf(model, attributes, lat_vec, output_type, N, dim, de
         pass
     verts += voxel_origin
     return verts[None, :, :], faces
+
+
+
+def create_mesh_from_2d_deepsdf(model, attributes, lat_vec, output_type, N, device):
+    model.eval()
+    head = 0
+    num_samples = N ** 2
+    max_batch = 16 ** 2
+
+    # NOTE: the voxel_origin is actually the (bottom, left, down) corner, not the middle
+    voxel_origin = np.array([-1., -1.]) * 2
+    voxel_size = 2.0 / (N - 1) * 2
+
+    overall_index = torch.arange(0, N ** 2, 1, out=torch.LongTensor())
+    samples = torch.zeros(N ** 2, 3)
+
+    # transform first 3 columns
+    # to be the x, y index
+    samples[:, 1] = overall_index % N
+    samples[:, 0] = (overall_index.long() / N) % N
+
+    # transform first 3 columns
+    # to be the x, y coordinate
+    samples[:, 0] = (samples[:, 0].float() * voxel_size) + voxel_origin[0]
+    samples[:, 1] = (samples[:, 1].float() * voxel_size) + voxel_origin[1]
+
+
+    while head < num_samples:
+        #print(head)
+        sample_subset = samples[head : min(head + max_batch, num_samples), 0:3].to(device)
+        if type(lat_vec) == dict:
+            lat_vec_subset = {}
+            for name, value in lat_vec.items():
+                lat_vec_subset[name] = lat_vec[name][0, [0], :].repeat(sample_subset.shape[0], 1).to(device)[None, :, :]
+        else:
+            lat_vec_subset  = lat_vec[0, [0], :].repeat(sample_subset.shape[0], 1).to(device)[None, :, :]
+        samples[head : min(head + max_batch, num_samples), -1] = (
+            model(sample_subset[None, :, range(2)], attributes, lat_vec_subset)[output_type]
+            .squeeze()#.squeeze(1)
+            .detach()
+            .cpu()
+        )
+        head += max_batch
+
+    sdf_values = samples[:, -1]
+    sdf_values = sdf_values.reshape(N, N)
+
+    volume = sdf_values.detach().cpu().numpy()
+    verts, faces, normals, values = np.zeros((1, 2)), np.zeros((0, 2)), np.zeros((0, 2)), np.zeros(0)
+    import skimage.measure as measure
+    voxel_size = 4.0 / (N - 1) * 1.
+
+    try:
+        verts, faces, normals, values = measure.marching_cubes_lewiner(
+            volume, level=0., spacing=[voxel_size] * 2,)
+    except:
+        pass
+    verts += voxel_origin
+    return verts[None, :, :], faces
+
 
 
 def write_sdf_summary(model, model_input, attributes, gt, model_output, writer, total_steps, prefix='train_',device='cpu'):
@@ -760,7 +871,10 @@ def write_sdf_summary(model, model_input, attributes, gt, model_output, writer, 
 
 
 def write_deepsdf_summary(model, model_input, lat_vecs,attributes,  gt, model_output, writer, total_steps, prefix='train_',device='cpu'):
+
+    dim = model_input.shape[-1]
     slice_coords_2d = dataio.get_mgrid(128)
+
 
     #with torch.no_grad():
     model.eval()
@@ -781,15 +895,38 @@ def write_deepsdf_summary(model, model_input, lat_vecs,attributes,  gt, model_ou
         fixed_attributes[ith_attri] = attributes[ith_attri][[0]]  # [None, :]
 
 
-    out_mesh, _ = create_mesh_from_deepsdf(model, fixed_attributes, lat_vecs, output_type='model_out', N=128, dim=3, device=model.device)
+    out_mesh, _ = create_mesh_from_deepsdf(model, fixed_attributes, lat_vecs, output_type='model_out', N=128, dim=dim, device=model.device)
 
     pred_color = colors_tensor[None, 0].repeat( out_mesh.shape[-2], 1)[None, :, :].to(device)
     gt_color = colors_tensor[None, 1].repeat(model_input.shape[1], 1)[None, :, :].to(device)
-    arr_samples_comp = torch.cat((torch.from_numpy(out_mesh).to(device), model_input[0].reshape(-1, 3)[None, :, :]), dim=-2)
+    arr_samples_comp = torch.cat((torch.from_numpy(out_mesh).to(device), model_input[0].reshape(-1, dim)[None, :, :]), dim=-2)
     arr_color_comp = torch.cat((pred_color, gt_color), dim=-2)
     writer.add_mesh('comparison: ' + str(gt['id'][0]), vertices=arr_samples_comp, global_step=total_steps, colors=arr_color_comp)
     writer.add_mesh('reconstruction: ' + str(gt['id'][0]), vertices = torch.from_numpy(out_mesh).to(device), global_step=total_steps, colors=pred_color)
-    writer.add_mesh('gt: '+ str(gt['id'][0]), vertices=model_input[0].reshape(-1, 3)[None, :, :], global_step=total_steps, colors=gt_color)
+    writer.add_mesh('gt: '+ str(gt['id'][0]), vertices=model_input[0].reshape(-1, dim)[None, :, :], global_step=total_steps, colors=gt_color)
+
+    if dim == 2:
+        xy_slice_coords = slice_coords_2d
+        xy_slice_model_input = xy_slice_coords.to(device)[None, ...]
+
+        xy_model_out = model(xy_slice_model_input, fixed_attributes, fixed_lat_vec)
+        sdf_values = xy_model_out['model_out'].detach()
+        sdf_values = dataio.lin2img(sdf_values).squeeze().cpu().numpy()
+        fig = make_contour_plot(sdf_values, gt['id'][0], mode='lin')
+        writer.add_figure(prefix + 'xy_sdf_slice', fig, global_step=total_steps)
+
+        min_max_summary(prefix + 'model_out_min_max', model_output['model_out'], writer, total_steps)
+        min_max_summary(prefix + 'coords', model_input, writer, total_steps)
+
+        if 'model_map' in model_output.keys():
+            maps = xy_model_out['model_map']
+            for ith_attri in maps.keys():
+                sdf_values = maps[ith_attri].detach()
+                sdf_values = dataio.lin2img(sdf_values).squeeze().cpu().numpy()
+                # print(sdf_values.shape)
+                fig = make_contour_plot(sdf_values, gt['id'][0], mode='lin')
+                writer.add_figure(prefix + 'xy_sdf_slice_attr_map_for_' + str(ith_attri), fig, global_step=total_steps)
+        return
 
     '''
     1. x
