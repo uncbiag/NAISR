@@ -11,3 +11,6 @@ from naisr.loss_funcs import *
 from naisr.diff_operators import *
 from naisr.metrics import *
 from naisr.model_naigsr import DeepNAIGSR
+from naisr.starman_dataset import *
+from naisr.adni_dataset import *
+from naisr.airway_dataset import *
