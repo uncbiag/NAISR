@@ -60,23 +60,29 @@ We train and test our method on three datasets: Starman, ADNI Hippocampus, and P
 [AirwayModel]: https://github.com/uncbiag/NAISR/releases/download/naisr_weights_v0/naisr_weights_pediatric_airway.pth
 
 
-## Visualization of Existing Shape Space
-To get the shape space like the following figures for the three datasets used in the paper, one just need to apply the model weights with the following command, 
+## Visualizations of Shape Space Extrapolation 
 
-First, download the `NAISR model weights`.  These weights will be automatically saved to the ``checkpoints`` folder.
+### Getting Started
+One just need to use this [Colab demo](https://colab.research.google.com/drive/1OudGynEydIXpAgfA9lvi5d0L86kK-uwg) to explore the template shape space of {starmans, hippocampi and airways} used in the `NAISR` paper. 
+
+### More functions
+Our code repo provides more functions to plot the shape extrapolation as a matrix for a specific case or for the template (as Figure in the `NAISR` paper),
+
+To get the template shape extrapolation, pls use
 ```
-python download.py
+python evolution_shapematrix.py -e examples/hippocampus/naigsr_0920_base.json
 ```
 
-Run interactive GUI with the downloaded weights. The ``assets`` contains images for demo.
+To get the template shape extrapolation, pls use
 ```
-python evolution_shapematrix.py -examples/hippocampus/naigsr_0920_base.json
+python evolution_shapematrix_specific.py -e examples/hippocampus/naigsr_0920_base.json
 ```
-
 
 
 
 ## Customize
+One may also want to use `NAISR` on their on shape analysis problems. For this use we provide our best instructions here,
+
 ### Data Preprocessing
 
 #### Alignment with Rigid Transformation
