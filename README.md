@@ -1,7 +1,7 @@
 # <img src="NAISRicon.svg" width="35" height="35"> NAISR: A 3D Neural Additive Model for Interpretable Shape Representation
 
 Pytorch implementation for our `NAISR` paper <br>
-[NAISR: A 3D Neural Additive Model for Interpretable Shape Representation](https://arxiv.org/abs/2303.09234), ICLR 2024 Spotlight. <br>
+[NAISR: A 3D Neural Additive Model for Interpretable Shape Representation](https://arxiv.org/abs/2303.09234), ICLR 2024 **Spotlight**. <br>
 Yining Jiao, Carlton Zdanski, Julia Kimbell, Andrew Prince, Cameron Worden, Samuel Kirse, Christopher Rutter, Benjamin Shields, William Dunn, Jisan Mahmud, Marc Niethammer. <br>
 UNC-Chapel Hill
 
