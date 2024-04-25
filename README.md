@@ -68,12 +68,12 @@ One just need to use this [Colab demo](https://colab.research.google.com/drive/1
 ### More functions
 Our code repo provides more functions to visualize the shape space, e.g., as a matrix for a specific case or for the template shape (as Figure 3 in the main paper),
 
-To get the template shape extrapolation, pls use
+To get the matrix of the the matrix of thetemplate shape extrapolation, pls use
 ```
 python evolution_shapematrix.py -e examples/hippocampus/naigsr_0920_base.json
 ```
 
-To get the template shape extrapolation, pls use
+To get the matrix of the shape extrapolation for a specific patient, pls use
 ```
 python evolution_shapematrix_specific.py -e examples/hippocampus/naigsr_0920_base.json
 ```
@@ -182,20 +182,17 @@ python transport.py -e examples/starman/naigsr_0222_base.json
 
 ### Shape Evolution and Disentanglement
 
-One just need to use this [Colab demo](https://colab.research.google.com/drive/1OudGynEydIXpAgfA9lvi5d0L86kK-uwg) to explore the template shape space of {starmen, hippocampi and airways} used in the `NAISR` paper. 
+One just need to adjust this [Colab demo](https://colab.research.google.com/drive/1OudGynEydIXpAgfA9lvi5d0L86kK-uwg) with their own `NAISR` weights to explore the learned deform the template shape with the query covariates. 
 
-To get the template shape extrapolation, pls use
+To get the matrix of the template shape extrapolation, pls use
 ```
 python evolution_shapematrix.py -e examples/starman/naigsr_0222_base.json 
 ```
-```
 
-To get the template shape extrapolation, pls use
+To get the matrix of the shape extrapolation for a specific patient, pls use
 ```
 python evolution_shapematrix_specific.py -e examples/starman/naigsr_0222_base.json 
 ```
-
-
 
 
 
