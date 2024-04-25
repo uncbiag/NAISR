@@ -8,8 +8,7 @@ UNC-Chapel Hill
 #### [Paper](https://arxiv.org/abs/2303.09234) | [Project Page](https://uncbiag.github.io/NAISR/) | [Colab Demos](https://colab.research.google.com/drive/1OudGynEydIXpAgfA9lvi5d0L86kK-uwg?usp=sharing)
 
 
-<div align=center><img src="https://github.com/uncbiag/NAISR/blob/page/docs/NAISR_poster.png" width="1000" height="600"/></div>
-
+<div align=center><img src="https://github.com/uncbiag/NAISR/blob/main/figs/NAISRoverviewwide.svg?raw=true" width="1000" height="600"/></div>
 
 Please cite as:
 ```
