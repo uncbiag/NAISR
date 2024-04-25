@@ -63,10 +63,10 @@ We train and test our method on three datasets: Starman, ADNI Hippocampus, and P
 ## Visualizations of Shape Space Extrapolation 
 
 ### Getting Started
-One just need to use this [Colab demo](https://colab.research.google.com/drive/1OudGynEydIXpAgfA9lvi5d0L86kK-uwg) to explore the template shape space of {starmans, hippocampi and airways} used in the `NAISR` paper. 
+One just need to use this [Colab demo](https://colab.research.google.com/drive/1OudGynEydIXpAgfA9lvi5d0L86kK-uwg) to explore the template shape space of {starmen, hippocampi and airways} used in the `NAISR` paper. 
 
 ### More functions
-Our code repo provides more functions to plot the shape extrapolation as a matrix for a specific case or for the template (as Figure in the `NAISR` paper),
+Our code repo provides more functions to visualize the shape space, e.g., as a matrix for a specific case or for the template shape (as Figure 3 in the main paper),
 
 To get the template shape extrapolation, pls use
 ```
@@ -81,7 +81,7 @@ python evolution_shapematrix_specific.py -e examples/hippocampus/naigsr_0920_bas
 
 
 ## Customize
-One may also want to use `NAISR` on their on shape analysis problems. For this use we provide our best instructions here,
+One may also want to use `NAISR` on their own shape analysis problems. For this use we provide our best suggestions/instructions here through the illustration for the simulated starman dataset,
 
 ### Data Preprocessing
 
@@ -151,15 +151,55 @@ In our case, we use airway landmarks to learn the rigid transformation; and ICP 
     "whether_code_regularization": true}
 ```
 ### Training
+For training, one need to use `train_atlas_3dnaigsr.py` with different networking settings indicated with the `json` files, e.g., for the starman dataset,
+```
+python train_atlas_3dnaigsr.py -e examples/starman/naigsr_0222_base.json
+```
 
-### Testing
+### Shape Reconstruction
+For testing/reconstruction without covariates, one need to `reconstruct_atlas.py` with different network settings indicated with the `json` files, e.g., for the starman dataset.
+```
+python reconstruct_atlas.py -e examples/starman/naigsr_0222_base.json 
+```
 
-### Application - Visualization of Your Shape Space
+For testing/reconstruction with covariates, one need to `reconstruct_atlas.py` with different network settings indicated with the `json` files, e.g., for the starman dataset.
+```
+python reconstruct_atlas_with_cov.py -e examples/starman/naigsr_0222_base.json 
+```
+
+
+### Shape Transport
+For shape transport without covariates, one need to `reconstruct_atlas.py` with different network settings indicated with the `json` files, e.g., for the starman dataset.
+```
+python transport_general.py -e examples/starman/naigsr_0222_base.json 
+```
+
+For shape transport with covariates, one need to `reconstruct_atlas.py` with different network settings indicated with the `json` files, e.g., for the starman dataset.
+```
+python transport.py -e examples/starman/naigsr_0222_base.json 
+```
+
+
+### Shape Evolution and Disentanglement
+
+One just need to use this [Colab demo](https://colab.research.google.com/drive/1OudGynEydIXpAgfA9lvi5d0L86kK-uwg) to explore the template shape space of {starmen, hippocampi and airways} used in the `NAISR` paper. 
+
+To get the template shape extrapolation, pls use
+```
+python evolution_shapematrix.py -e examples/starman/naigsr_0222_base.json 
+```
+```
+
+To get the template shape extrapolation, pls use
+```
+python evolution_shapematrix_specific.py -e examples/starman/naigsr_0222_base.json 
+```
 
 
 
 
-Instructions on the way...
+
+More instructions on the way...
 
 
 
