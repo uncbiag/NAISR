@@ -151,30 +151,30 @@ In our case, we use airway landmarks to learn the rigid transformation; and ICP 
     "whether_code_regularization": true}
 ```
 ### Training
-For training, one need to use `train_atlas_3dnaigsr.py` with different networking settings indicated with the `json` files, e.g., for the starman dataset,
+For training, one needs to use `train_atlas_3dnaigsr.py` with different networking settings indicated with the `json` files, e.g., for the starman dataset,
 ```
 python train_atlas_3dnaigsr.py -e examples/starman/naigsr_0222_base.json
 ```
 
 ### Shape Reconstruction
-For testing/reconstruction without covariates, one need to `reconstruct_atlas.py` with different network settings indicated with the `json` files, e.g., for the starman dataset.
+For testing/reconstruction without covariates, one needs to `reconstruct_atlas.py` with different network settings indicated with the `json` files, e.g., for the starman dataset.
 ```
 python reconstruct_atlas.py -e examples/starman/naigsr_0222_base.json 
 ```
 
-For testing/reconstruction with covariates, one need to `reconstruct_atlas.py` with different network settings indicated with the `json` files, e.g., for the starman dataset.
+For testing/reconstruction with covariates, one needs to `reconstruct_atlas.py` with different network settings indicated with the `json` files, e.g., for the starman dataset.
 ```
 python reconstruct_atlas_with_cov.py -e examples/starman/naigsr_0222_base.json 
 ```
 
 
 ### Shape Transport
-For shape transport without covariates, one need to `reconstruct_atlas.py` with different network settings indicated with the `json` files, e.g., for the starman dataset.
+For shape transport without covariates, one needs to `reconstruct_atlas.py` with different network settings indicated with the `json` files, e.g., for the starman dataset.
 ```
 python transport_general.py -e examples/starman/naigsr_0222_base.json 
 ```
 
-For shape transport with covariates, one need to `reconstruct_atlas.py` with different network settings indicated with the `json` files, e.g., for the starman dataset.
+For shape transport with covariates, one needs to `reconstruct_atlas.py` with different network settings indicated with the `json` files, e.g., for the starman dataset.
 ```
 python transport.py -e examples/starman/naigsr_0222_base.json 
 ```
@@ -182,7 +182,7 @@ python transport.py -e examples/starman/naigsr_0222_base.json
 
 ### Shape Evolution and Disentanglement
 
-One just need to adjust this [Colab demo](https://colab.research.google.com/drive/1OudGynEydIXpAgfA9lvi5d0L86kK-uwg) with their own `NAISR` weights to explore the learned deform the template shape with the query covariates. 
+One just needs to adjust this [Colab demo](https://colab.research.google.com/drive/1OudGynEydIXpAgfA9lvi5d0L86kK-uwg) with their own `NAISR` weights to explore the learned deform the template shape with the query covariates. 
 
 To get the matrix of the template shape extrapolation, pls use
 ```
